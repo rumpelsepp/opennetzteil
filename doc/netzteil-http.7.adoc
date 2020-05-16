@@ -1,0 +1,43 @@
+= netzteil-http(7)
+:doctype:    manpage
+:man source: netzteil
+
+== Name
+
+netzteil-http - a programming interface for power supplies over http
+
+== API
+
+GET /api/devices::
+
+GET /api/devices/{id}/out::
+
+PUT /api/devices/{id}/out::
+    `true`
+
+GET /api/devices/{id}/ident::
+
+PUT /api/devices/{id}/beep::
+
+GET /api/devices/{id}/channels::
+
+GET /api/devices/{id}/channels/{channel}/current::
+
+PUT /api/devices/{id}/channels/{channel}/current::
+
+GET /api/devices/{id}/channels/{channel}/voltage::
+
+PUT /api/devices/{id}/channels/{channel}/voltage::
+    `10.45`
+
+GET /api/devices/{id}/channels/{channel}/out::
+
+PUT /api/devices/{id}/channels/{channel}/out::
+
+GET /api/devices/{id}/channels/{channel}/ocp::
+
+PUT /api/devices/{id}/channels/{channel}/ocp::
+
+GET /api/devices/{id}/channels/{channel}/ovp::
+
+PUT /api/devices/{id}/channels/{channel}/ovp::

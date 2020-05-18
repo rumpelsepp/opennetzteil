@@ -12,7 +12,7 @@ type Netzteil interface {
 	GetIdent() (string, error)
 	SetBeep(enabled bool) error
 	GetChannels() ([]int, error)
-	GetCurrent(channel float64) (float64, error)
+	GetCurrent(channel int) (float64, error)
 	SetCurrent(channel int, current float64) error
 	GetVoltage(channel int) (float64, error)
 	SetVoltage(channel int, voltage float64) error

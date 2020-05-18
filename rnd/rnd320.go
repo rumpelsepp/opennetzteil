@@ -55,7 +55,6 @@ func (nt *RND320) Probe() error {
 	if err != nil {
 		return err
 	}
-
 	if _, err := io.ReadFull(nt.reader, buf); err != nil {
 		rlog.Info(err)
 		return err
@@ -81,8 +80,7 @@ func (nt *RND320) SetMaster(enabled bool) error {
 		cmd = []byte("OUT0")
 	}
 
-	err := nt.SendCommand(nt.writer, cmd)
-	if err != nil {
+	if err := nt.SendCommand(nt.writer, cmd); err != nil {
 		return err
 	}
 	return nil
@@ -100,11 +98,31 @@ func (nt *RND320) GetChannels() ([]int, error) {
 	return []int{1}, nil
 }
 
-func (nt *RND320) GetCurrent(channel float64) (float64, error) {
-	return 0, nil
+func (nt *RND320) GetCurrent(channel int) (float64, error) {
+	cmd := []byte(fmt.Sprintf("IOUT%d?", channel))
+	err := nt.SendCommand(nt.writer, cmd)
+	if err != nil {
+		return 0, err
+	}
+	buf := make([]byte, 64)
+	n, err := nt.reader.Read(buf)
+	if err != nil {
+		return 0, err
+	}
+
+	current, err := strconv.ParseFloat(string(buf[:n]), 32)
+	if err != nil {
+		return 0, err
+	}
+	return current, nil
 }
 
 func (nt *RND320) SetCurrent(channel int, current float64) error {
+	cmd := []byte(fmt.Sprintf("ISET%d:%.2f", channel, current))
+	err := nt.SendCommand(nt.writer, cmd)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

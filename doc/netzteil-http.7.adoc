@@ -1,14 +1,31 @@
 = netzteil-http(7)
 :doctype:    manpage
-:man source: netzteil
+:man source: opennetzteil
 
 == Name
 
 netzteil-http - a programming interface for power supplies over http
 
+== Description
+
+OpenNetzteil provides a uniform HTTP API for powersupplies to be controlled over HTTP.
+Usually, these devices can be controlled over a device specific and loosely specified protocol called SCPI.
+Such powersupplies are accessed differently, some possibilities are USB, TCP, Serial Line, …
+The HTTP API, described in this document, aims to be a proxy which can be used to run even multiple, different power supplies on one machine.
+Authentication, authorization, and other security mechanism are not in the scope of this API.
+Use a reverse proxy for implementing more sophisticated HTTP techniques.
+
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all capitals, as shown here.
+
 == API
 
+This API is also called the complete API.
+Every GET endpoint delivers data encoded in JSON (RFC7159).
+Every PUT endpoint accepts data encoded in JSON.
+If there is only one device available, a reduces API MAY be provided by implementations.
+
 GET /api/devices::
+    Query the available power supplies.
 
 GET /api/devices/{id}/out::
 
@@ -41,3 +58,42 @@ PUT /api/devices/{id}/channels/{channel}/ocp::
 GET /api/devices/{id}/channels/{channel}/ovp::
 
 PUT /api/devices/{id}/channels/{channel}/ovp::
+
+== Reduced API
+
+The reduced API is optional if **only one** device is served via an opennetzteil application.
+The reduced API MAY be implemented using an HTTP 308 redirect to the appropriate endpoint of the complete API.
+If two or more devices are served, all endpoints of the reduced API MAY return a 404 error.
+If no 308 redirects are used, the responses MUST be served directly from the reduced API.
+
+GET /api/device/out::
+
+PUT /api/device/out::
+    `true`
+
+GET /api/device/ident::
+
+PUT /api/device/beep::
+
+GET /api/device/channels::
+
+GET /api/device/channels/{channel}/current::
+
+PUT /api/device/channels/{channel}/current::
+
+GET /api/device/channels/{channel}/voltage::
+
+PUT /api/device/channels/{channel}/voltage::
+    `10.45`
+
+GET /api/device/channels/{channel}/out::
+
+PUT /api/device/channels/{channel}/out::
+
+GET /api/device/channels/{channel}/ocp::
+
+PUT /api/device/channels/{channel}/ocp::
+
+GET /api/device/channels/{channel}/ovp::
+
+PUT /api/device/channels/{channel}/ovp::

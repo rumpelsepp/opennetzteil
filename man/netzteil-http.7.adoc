@@ -126,3 +126,8 @@ GET `/device/channels/{channel}/ovp`::
 
 PUT `/device/channels/{channel}/ovp`::
     TODO
+
+== Authors
+
+Maintained by Stefan Tatschner <stefan@rumpelsepp.org>.
+The Git repository is hosted here: https://git.sr.ht/~rumpelsepp/opennetzteil

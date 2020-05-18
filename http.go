@@ -209,7 +209,7 @@ func (s *HTTPServer) putOvp(w http.ResponseWriter, r *http.Request) {
 
 func (s *HTTPServer) CreateHandler() http.Handler {
 	r := mux.NewRouter()
-	api := r.PathPrefix("/api").Subrouter()
+	api := r.PathPrefix("/_netzteil/api").Subrouter()
 	api.HandleFunc("/devices", s.getDevices).Methods(http.MethodGet)
 	api.HandleFunc("/devices/{id}/ident", s.getIndent).Methods(http.MethodGet)
 	api.HandleFunc("/devices/{id}/beep", s.putBeep).Methods(http.MethodGet)

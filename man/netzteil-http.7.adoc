@@ -26,51 +26,52 @@ If there is only one device available, a reduces API MAY be provided by implemen
 All endpoints MUST be prepended the opennetzteil namespace indicator: `/_netzteil/api/`.
 The full endpoint path of the `/devices` endpoint looks like the following: `/_netzteil/api/devices`.
 
-GET /devices::
+GET `/devices`::
     Query the available power supplies.
 
-GET /devices/{id}/out::
+GET `/devices/{id}/out`::
     TODO
 
-PUT /devices/{id}/out::
+PUT `/devices/{id}/out`::
     `true`
 
-GET /devices/{id}/ident::
+GET `/devices/{id}/ident`::
     TODO
 
-PUT /devices/{id}/beep::
+PUT `/devices/{id}/beep`::
     TODO
 
-GET /devices/{id}/channels::
+GET `/devices/{id}/channels`::
     TODO
 
-GET /devices/{id}/channels/{channel}/current::
+GET `/devices/{id}/channels/{channel}/current`::
     TODO
 
-PUT /devices/{id}/channels/{channel}/current::
+PUT `/devices/{id}/channels/{channel}/current`::
     TODO
 
-GET /devices/{id}/channels/{channel}/voltage::
+GET `/devices/{id}/channels/{channel}/voltage`::
     TODO
 
-PUT /devices/{id}/channels/{channel}/voltage::
+PUT `/devices/{id}/channels/{channel}/voltage`::
     `10.45`
 
-GET /devices/{id}/channels/{channel}/out::
-
-PUT /devices/{id}/channels/{channel}/out::
+GET `/devices/{id}/channels/{channel}/out`::
     TODO
 
-GET /devices/{id}/channels/{channel}/ocp::
+PUT `/devices/{id}/channels/{channel}/out`::
     TODO
 
-PUT /devices/{id}/channels/{channel}/ocp::
+GET `/devices/{id}/channels/{channel}/ocp`::
     TODO
 
-GET /devices/{id}/channels/{channel}/ovp::
+PUT `/devices/{id}/channels/{channel}/ocp`::
     TODO
 
-PUT /devices/{id}/channels/{channel}/ovp::
+GET `/devices/{id}/channels/{channel}/ovp`::
+    TODO
+
+PUT `/devices/{id}/channels/{channel}/ovp`::
     TODO
 
 == Reduced API
@@ -81,47 +82,47 @@ If two or more devices are served, all endpoints of the reduced API MAY return a
 If no 308 redirects are used, the responses MUST be served directly from the reduced API.
 All endpoints MUST be prepended the opennetzteil namespace indicator: `/_netzteil/api/`.
 
-GET /device/out::
+GET `/device/out`::
     TODO
 
-PUT /device/out::
+PUT `/device/out`::
     `true`
 
-GET /device/ident::
+GET `/device/ident`::
     TODO
 
-PUT /device/beep::
+PUT `/device/beep`::
     TODO
 
-GET /device/channels::
+GET `/device/channels`::
     TODO
 
-GET /device/channels/{channel}/current::
+GET `/device/channels/{channel}/current`::
     TODO
 
-PUT /device/channels/{channel}/current::
+PUT `/device/channels/{channel}/current`::
     TODO
 
-GET /device/channels/{channel}/voltage::
+GET `/device/channels/{channel}/voltage`::
     TODO
 
-PUT /device/channels/{channel}/voltage::
+PUT `/device/channels/{channel}/voltage`::
     `10.45`
 
-GET /device/channels/{channel}/out::
+GET `/device/channels/{channel}/out`::
     TODO
 
-PUT /device/channels/{channel}/out::
+PUT `/device/channels/{channel}/out`::
     TODO
 
-GET /device/channels/{channel}/ocp::
+GET `/device/channels/{channel}/ocp`::
     TODO
 
-PUT /device/channels/{channel}/ocp::
+PUT `/device/channels/{channel}/ocp`::
     TODO
 
-GET /device/channels/{channel}/ovp::
+GET `/device/channels/{channel}/ovp`::
     TODO
 
-PUT /device/channels/{channel}/ovp::
+PUT `/device/channels/{channel}/ovp`::
     TODO

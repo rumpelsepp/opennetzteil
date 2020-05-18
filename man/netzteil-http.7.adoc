@@ -28,21 +28,28 @@ GET /api/devices::
     Query the available power supplies.
 
 GET /api/devices/{id}/out::
+    TODO
 
 PUT /api/devices/{id}/out::
     `true`
 
 GET /api/devices/{id}/ident::
+    TODO
 
 PUT /api/devices/{id}/beep::
+    TODO
 
 GET /api/devices/{id}/channels::
+    TODO
 
 GET /api/devices/{id}/channels/{channel}/current::
+    TODO
 
 PUT /api/devices/{id}/channels/{channel}/current::
+    TODO
 
 GET /api/devices/{id}/channels/{channel}/voltage::
+    TODO
 
 PUT /api/devices/{id}/channels/{channel}/voltage::
     `10.45`
@@ -50,14 +57,19 @@ PUT /api/devices/{id}/channels/{channel}/voltage::
 GET /api/devices/{id}/channels/{channel}/out::
 
 PUT /api/devices/{id}/channels/{channel}/out::
+    TODO
 
 GET /api/devices/{id}/channels/{channel}/ocp::
+    TODO
 
 PUT /api/devices/{id}/channels/{channel}/ocp::
+    TODO
 
 GET /api/devices/{id}/channels/{channel}/ovp::
+    TODO
 
 PUT /api/devices/{id}/channels/{channel}/ovp::
+    TODO
 
 == Reduced API
 
@@ -67,33 +79,46 @@ If two or more devices are served, all endpoints of the reduced API MAY return a
 If no 308 redirects are used, the responses MUST be served directly from the reduced API.
 
 GET /api/device/out::
+    TODO
 
 PUT /api/device/out::
     `true`
 
 GET /api/device/ident::
+    TODO
 
 PUT /api/device/beep::
+    TODO
 
 GET /api/device/channels::
+    TODO
 
 GET /api/device/channels/{channel}/current::
+    TODO
 
 PUT /api/device/channels/{channel}/current::
+    TODO
 
 GET /api/device/channels/{channel}/voltage::
+    TODO
 
 PUT /api/device/channels/{channel}/voltage::
     `10.45`
 
 GET /api/device/channels/{channel}/out::
+    TODO
 
 PUT /api/device/channels/{channel}/out::
+    TODO
 
 GET /api/device/channels/{channel}/ocp::
+    TODO
 
 PUT /api/device/channels/{channel}/ocp::
+    TODO
 
 GET /api/device/channels/{channel}/ovp::
+    TODO
 
 PUT /api/device/channels/{channel}/ovp::
+    TODO

@@ -29,6 +29,7 @@ func (s *HTTPServer) lookupDevice(vars map[string]string) (Netzteil, error) {
 	return s.Devices[id], nil
 }
 
+// Handlers for full API
 func (s *HTTPServer) getDevices(w http.ResponseWriter, r *http.Request) {
 	var resp []string
 	for _, dev := range s.Devices {
@@ -207,12 +208,93 @@ func (s *HTTPServer) getOvp(w http.ResponseWriter, r *http.Request) {
 func (s *HTTPServer) putOvp(w http.ResponseWriter, r *http.Request) {
 }
 
+// Handlers for reduced API
+func (s *HTTPServer) redIndent(w http.ResponseWriter, r *http.Request) {
+	url := "/_netzteil/api/devices/0/ident"
+	http.Redirect(w, r, url, http.StatusPermanentRedirect)
+}
+
+func (s *HTTPServer) redBeep(w http.ResponseWriter, r *http.Request) {
+	url := "/_netzteil/api/devices/0/beep"
+	http.Redirect(w, r, url, http.StatusPermanentRedirect)
+}
+
+func (s *HTTPServer) redMaster(w http.ResponseWriter, r *http.Request) {
+	url := "/_netzteil/api/devices/0/out"
+	http.Redirect(w, r, url, http.StatusPermanentRedirect)
+}
+
+func (s *HTTPServer) redChannels(w http.ResponseWriter, r *http.Request) {
+	url := "/_netzteil/api/devices/0/channels"
+	http.Redirect(w, r, url, http.StatusPermanentRedirect)
+}
+
+func (s *HTTPServer) redCurrent(w http.ResponseWriter, r *http.Request) {
+	// TODO: Make a helper for this
+	vars := mux.Vars(r)
+	channel, err := strconv.Atoi(vars["channel"])
+	if err != nil {
+		helpers.SendJSONError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	url := fmt.Sprintf("/_netzteil/api/devices/0/channel/%d/current", channel)
+	http.Redirect(w, r, url, http.StatusPermanentRedirect)
+}
+
+func (s *HTTPServer) redVoltage(w http.ResponseWriter, r *http.Request) {
+	// TODO: Make a helper for this
+	vars := mux.Vars(r)
+	channel, err := strconv.Atoi(vars["channel"])
+	if err != nil {
+		helpers.SendJSONError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	url := fmt.Sprintf("/_netzteil/api/devices/0/channel/%d/voltage", channel)
+	http.Redirect(w, r, url, http.StatusPermanentRedirect)
+}
+
+func (s *HTTPServer) redOut(w http.ResponseWriter, r *http.Request) {
+	// TODO: Make a helper for this
+	vars := mux.Vars(r)
+	channel, err := strconv.Atoi(vars["channel"])
+	if err != nil {
+		helpers.SendJSONError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	url := fmt.Sprintf("/_netzteil/api/devices/0/channel/%d/out", channel)
+	http.Redirect(w, r, url, http.StatusPermanentRedirect)
+}
+
+func (s *HTTPServer) redOcp(w http.ResponseWriter, r *http.Request) {
+	// TODO: Make a helper for this
+	vars := mux.Vars(r)
+	channel, err := strconv.Atoi(vars["channel"])
+	if err != nil {
+		helpers.SendJSONError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	url := fmt.Sprintf("/_netzteil/api/devices/0/channel/%d/ocp", channel)
+	http.Redirect(w, r, url, http.StatusPermanentRedirect)
+}
+
+func (s *HTTPServer) redOvp(w http.ResponseWriter, r *http.Request) {
+	// TODO: Make a helper for this
+	vars := mux.Vars(r)
+	channel, err := strconv.Atoi(vars["channel"])
+	if err != nil {
+		helpers.SendJSONError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	url := fmt.Sprintf("/_netzteil/api/devices/0/channel/%d/ovp", channel)
+	http.Redirect(w, r, url, http.StatusPermanentRedirect)
+}
+
 func (s *HTTPServer) CreateHandler() http.Handler {
 	r := mux.NewRouter()
 	api := r.PathPrefix("/_netzteil/api").Subrouter()
 	api.HandleFunc("/devices", s.getDevices).Methods(http.MethodGet)
 	api.HandleFunc("/devices/{id}/ident", s.getIndent).Methods(http.MethodGet)
-	api.HandleFunc("/devices/{id}/beep", s.putBeep).Methods(http.MethodGet)
+	api.HandleFunc("/devices/{id}/beep", s.putBeep).Methods(http.MethodPut)
 	api.HandleFunc("/devices/{id}/out", s.getMaster).Methods(http.MethodGet)
 	api.HandleFunc("/devices/{id}/out", s.putMaster).Methods(http.MethodPut)
 	api.HandleFunc("/devices/{id}/channels", s.getChannels).Methods(http.MethodGet)
@@ -226,5 +308,19 @@ func (s *HTTPServer) CreateHandler() http.Handler {
 	api.HandleFunc("/devices/{id}/channels/{channel}/ocp", s.putOcp).Methods(http.MethodPut)
 	api.HandleFunc("/devices/{id}/channels/{channel}/ovp", s.getOvp).Methods(http.MethodGet)
 	api.HandleFunc("/devices/{id}/channels/{channel}/ovp", s.putOvp).Methods(http.MethodPut)
+
+	// Enable reduced API if only one powersupply device is registered.
+	if len(s.Devices) == 1 {
+		api.HandleFunc("/device/ident", s.redIndent).Methods(http.MethodGet)
+		api.HandleFunc("/device/beep", s.redBeep).Methods(http.MethodPut)
+		api.HandleFunc("/device/out", s.redMaster).Methods(http.MethodGet, http.MethodPut)
+		api.HandleFunc("/device/channels", s.redChannels).Methods(http.MethodGet)
+		api.HandleFunc("/device/channels/{channel}/current", s.redCurrent).Methods(http.MethodGet, http.MethodPut)
+		api.HandleFunc("/device/channels/{channel}/voltage", s.redVoltage).Methods(http.MethodGet, http.MethodPut)
+		api.HandleFunc("/device/channels/{channel}/out", s.redOut).Methods(http.MethodGet, http.MethodPut)
+		api.HandleFunc("/device/channels/{channel}/ocp", s.redOcp).Methods(http.MethodGet, http.MethodPut)
+		api.HandleFunc("/device/channels/{channel}/ovp", s.redOvp).Methods(http.MethodGet, http.MethodPut)
+	}
+
 	return handlers.LoggingHandler(s.ReqLog, r)
 }

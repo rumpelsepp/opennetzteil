@@ -42,7 +42,7 @@ PUT (REQUIRED) `/devices/{id}/out`::
     Accepts a boolean JSON body: `true`, or `false`.
 
 GET (REQUIRED) `/devices/{id}/ident`::
-    Returns the device indentity.
+    Returns the device identity.
     Typically, this is the model name, e.g. `RND 320-KD3005P V2.0`.
 
 PUT (OPTIONAL) `/devices/{id}/beep`::
@@ -52,7 +52,7 @@ GET (OPTIONAL) `/devices/{id}/status`::
     Query status information.
     The returned data is device specific.
 
-GET/PUT (OPTIONAL) `/devices/{id}/channel`::
+GET|PUT (OPTIONAL) `/devices/{id}/channel`::
     If the device has *only one* channel, this endpoint points to `/devices/{id}/channels/0`.
     This endpoint MAY use an HTTP 308 redirect to the appropriate endpoint.
     The API using these endpoints is called reduced API.

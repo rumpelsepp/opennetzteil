@@ -60,9 +60,21 @@ func (s *HTTPServer) getIndent(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *HTTPServer) putBeep(w http.ResponseWriter, r *http.Request) {
+	helpers.SendJSONError(w, "not implemented", http.StatusInternalServerError)
 }
 
 func (s *HTTPServer) getMaster(w http.ResponseWriter, r *http.Request) {
+	dev, err := s.lookupDevice(mux.Vars(r))
+	if err != nil {
+		helpers.SendJSONError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	state, err := dev.GetMaster()
+	if err != nil {
+		helpers.SendJSONError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	helpers.SendJSON(w, state)
 }
 
 func (s *HTTPServer) putMaster(w http.ResponseWriter, r *http.Request) {
@@ -221,21 +233,27 @@ func (s *HTTPServer) putVoltage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *HTTPServer) getOut(w http.ResponseWriter, r *http.Request) {
+	helpers.SendJSONError(w, "not implemented", http.StatusInternalServerError)
 }
 
 func (s *HTTPServer) putOut(w http.ResponseWriter, r *http.Request) {
+	helpers.SendJSONError(w, "not implemented", http.StatusInternalServerError)
 }
 
 func (s *HTTPServer) getOcp(w http.ResponseWriter, r *http.Request) {
+	helpers.SendJSONError(w, "not implemented", http.StatusInternalServerError)
 }
 
 func (s *HTTPServer) putOcp(w http.ResponseWriter, r *http.Request) {
+	helpers.SendJSONError(w, "not implemented", http.StatusInternalServerError)
 }
 
 func (s *HTTPServer) getOvp(w http.ResponseWriter, r *http.Request) {
+	helpers.SendJSONError(w, "not implemented", http.StatusInternalServerError)
 }
 
 func (s *HTTPServer) putOvp(w http.ResponseWriter, r *http.Request) {
+	helpers.SendJSONError(w, "not implemented", http.StatusInternalServerError)
 }
 
 // Magic handler for reduced API

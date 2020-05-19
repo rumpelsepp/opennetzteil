@@ -96,8 +96,8 @@ func (nt *NetzteilBase) Request(cmd []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	var buf bytes.Buffer
 
+	var buf bytes.Buffer
 	_, err = io.Copy(&buf, nt.Handle)
 	if err != nil {
 		return nil, err

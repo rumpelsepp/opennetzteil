@@ -53,6 +53,10 @@ func (nt *RND320) Status() (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(resp) != 1 {
+		fmt.Println(resp)
+		return nil, fmt.Errorf("invalid data from device received")
+	}
 
 	var (
 		mode   string

@@ -1,0 +1,29 @@
+= netzteil(5)
+:doctype:    manpage
+:man source: opennetzteil
+
+== Name
+
+netzteil - configuration file
+
+== Synopsis
+
+This file uses the TOML file format which is specified here: https://github.com/toml-lang/toml
+
+== Description
+
+== Example
+
+----
+[http]
+listen = :8000
+
+[[netzteile]]
+handle = file:///dev/ttyACM0
+model = rnd320
+----
+
+== Authors
+
+Maintained by Stefan Tatschner <stefan@rumpelsepp.org>.
+The Git repository is hosted here: https://git.sr.ht/~rumpelsepp/opennetzteil

@@ -1,6 +1,7 @@
 package opennetzteil
 
 import (
+	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
@@ -48,6 +49,10 @@ func (nt *NetzteilBase) SendCommand(cmd []byte) error {
 		return err
 	}
 	return nil
+}
+
+func (nt *NetzteilBase) SendCommandLine(cmd []byte) error {
+	return nt.SendCommand(append(cmd, '\n'))
 }
 
 func (nt *NetzteilBase) RequestWithTimeout(cmd []byte, timeout time.Duration) ([]byte, error) {
@@ -103,4 +108,20 @@ func (nt *NetzteilBase) Request(cmd []byte) ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+func (nt *NetzteilBase) RequestLine(cmd []byte) ([]byte, error) {
+	nt.mutex.Lock()
+	defer nt.mutex.Unlock()
+	_, err := io.Copy(nt.Handle, bytes.NewReader(append(cmd, '\n')))
+	if err != nil {
+		return nil, err
+	}
+
+	reader := bufio.NewReader(nt.Handle)
+	line, _, err := reader.ReadLine()
+	if err != nil {
+		return nil, err
+	}
+	return line, nil
 }

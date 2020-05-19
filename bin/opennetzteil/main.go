@@ -11,6 +11,7 @@ import (
 
 	"git.sr.ht/~rumpelsepp/opennetzteil"
 	"git.sr.ht/~rumpelsepp/opennetzteil/rnd"
+	"git.sr.ht/~rumpelsepp/opennetzteil/rs"
 	"git.sr.ht/~rumpelsepp/rlog"
 	"git.sr.ht/~sircmpwn/getopt"
 	"github.com/pelletier/go-toml"
@@ -72,6 +73,12 @@ func initNetzteile(conf *config) ([]opennetzteil.Netzteil, error) {
 				return nil, fmt.Errorf("invalid handle for: %s", nc.Model)
 			}
 			nt = rnd.NewRND320(handle.Path)
+		case "hmc804":
+			if handle.Scheme != "tcp" {
+				return nil, fmt.Errorf("invalid handle for: %s", nc.Model)
+			}
+			fmt.Println(handle.Host)
+			nt = rs.NewHMC804(handle.Host)
 		default:
 			return nil, fmt.Errorf("unsupported power supply")
 		}

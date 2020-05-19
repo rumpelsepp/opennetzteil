@@ -237,7 +237,33 @@ func (s *HTTPServer) getOut(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *HTTPServer) putOut(w http.ResponseWriter, r *http.Request) {
-	helpers.SendJSONError(w, "not implemented", http.StatusInternalServerError)
+	var (
+		req  bool
+		vars = mux.Vars(r)
+	)
+	dev, err := s.lookupDevice(vars)
+	if err != nil {
+		helpers.SendJSONError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// TODO: Make a helper for this
+	channel, err := strconv.Atoi(vars["channel"])
+	if err != nil {
+		helpers.SendJSONError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = helpers.RecvJSON(r, &req)
+	if err != nil {
+		helpers.SendJSONError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	err = dev.SetOut(channel, req)
+	if err != nil {
+		helpers.SendJSONError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (s *HTTPServer) getOcp(w http.ResponseWriter, r *http.Request) {
@@ -288,16 +314,16 @@ func (s *HTTPServer) CreateHandler() http.Handler {
 	api.HandleFunc("/devices/{id:[0-9]+}/out", s.putMaster).Methods(http.MethodPut)
 	api.HandleFunc("/devices/{id:[0-9]+}/status", s.getStatus).Methods(http.MethodGet)
 	api.HandleFunc("/devices/{id:[0-9]+}/channels", s.getChannels).Methods(http.MethodGet)
-	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel}/current", s.getCurrent).Methods(http.MethodGet)
-	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel}/current", s.putCurrent).Methods(http.MethodPut)
-	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel}/voltage", s.getVoltage).Methods(http.MethodGet)
-	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel}/voltage", s.putVoltage).Methods(http.MethodPut)
-	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel}/out", s.getOut).Methods(http.MethodGet)
-	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel}/out", s.putOut).Methods(http.MethodPut)
-	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel}/ocp", s.getOcp).Methods(http.MethodGet)
-	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel}/ocp", s.putOcp).Methods(http.MethodPut)
-	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel}/ovp", s.getOvp).Methods(http.MethodGet)
-	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel}/ovp", s.putOvp).Methods(http.MethodPut)
+	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/current", s.getCurrent).Methods(http.MethodGet)
+	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/current", s.putCurrent).Methods(http.MethodPut)
+	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/voltage", s.getVoltage).Methods(http.MethodGet)
+	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/voltage", s.putVoltage).Methods(http.MethodPut)
+	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/out", s.getOut).Methods(http.MethodGet)
+	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/out", s.putOut).Methods(http.MethodPut)
+	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/ocp", s.getOcp).Methods(http.MethodGet)
+	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/ocp", s.putOcp).Methods(http.MethodPut)
+	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/ovp", s.getOvp).Methods(http.MethodGet)
+	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/ovp", s.putOvp).Methods(http.MethodPut)
 	chPrefix := api.PathPrefix("/devices/{id:[0-9]+}/channel/")
 	chPrefix.HandlerFunc(s.redAPI).Methods(http.MethodGet, http.MethodPut)
 

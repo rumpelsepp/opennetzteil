@@ -1,75 +1,87 @@
 package rnd
 
 import (
-	"bufio"
 	"fmt"
-	"io"
+	"os"
 	"strconv"
+	"time"
 
 	"git.sr.ht/~rumpelsepp/opennetzteil"
-	"git.sr.ht/~rumpelsepp/opennetzteil/serial"
-	"git.sr.ht/~rumpelsepp/rlog"
 )
-
-// TODO: This power supply does not have any delimiters
-// on the wire protocol. Thus, we must set a deadline or
-// something. Otherwise the application can deadlock.
-
-// TODO: mutex
 
 type RND320 struct {
 	opennetzteil.NetzteilBase
-	terminal io.ReadWriteCloser
-	writer   *bufio.Writer
-	reader   *bufio.Reader
-	ident    string
+	ident string
+}
+
+const (
+	ChannelModeCC = 1 << iota
+	ChannelModeVC
+)
+
+type Status struct {
+	ChannelMode string
+	Output      bool
 }
 
 func NewRND320(path string) *RND320 {
-	options := serial.OpenOptions{
-		PortName:        path,
-		BaudRate:        19200,
-		DataBits:        8,
-		StopBits:        1,
-		MinimumReadSize: 4,
-	}
-
-	port, err := serial.Open(options)
+	file, err := os.OpenFile(path, os.O_RDWR, 0644)
 	if err != nil {
 		panic(err)
 	}
 
 	return &RND320{
-		terminal: port,
-		writer:   bufio.NewWriter(port),
-		reader:   bufio.NewReader(port),
+		NetzteilBase: opennetzteil.NetzteilBase{
+			Handle: file,
+		},
 	}
 }
 
 func (nt *RND320) Probe() error {
-	var (
-		cmd = []byte("*IDN?")
-		buf = make([]byte, 20) // This power supply is so broken…
-	)
-	err := nt.SendCommand(nt.writer, cmd)
+	cmd := []byte("*IDN?")
+	resp, err := nt.RequestWithTimeout(cmd, 100*time.Millisecond)
 	if err != nil {
 		return err
 	}
-	if _, err := io.ReadFull(nt.reader, buf); err != nil {
-		rlog.Info(err)
-		return err
-	}
-	if err != nil {
-		return err
-	}
-
-	nt.ident = string(buf)
-
+	nt.ident = string(resp)
 	return nil
 }
 
+func (nt *RND320) Status() (interface{}, error) {
+	cmd := []byte("STATUS?")
+	resp, err := nt.RequestWithTimeout(cmd, 100*time.Millisecond)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		mode   string
+		output bool
+	)
+	if resp[0]&0x01 == 1 {
+		mode = "CV"
+	} else {
+		mode = "CC"
+	}
+	if resp[0]&0x40 == 1 {
+		output = true
+	} else {
+		output = false
+	}
+	status := Status{
+		ChannelMode: mode,
+		Output:      output,
+	}
+	return status, nil
+}
+
 func (nt *RND320) GetMaster() (bool, error) {
-	return true, nil
+	status, err := nt.Status()
+	if err != nil {
+		return false, err
+	}
+	s := status.(Status)
+	return s.Output, nil
 }
 
 func (nt *RND320) SetMaster(enabled bool) error {
@@ -80,7 +92,7 @@ func (nt *RND320) SetMaster(enabled bool) error {
 		cmd = []byte("OUT0")
 	}
 
-	if err := nt.SendCommand(nt.writer, cmd); err != nil {
+	if err := nt.SendCommand(cmd); err != nil {
 		return err
 	}
 	return nil
@@ -91,26 +103,21 @@ func (nt *RND320) GetIdent() (string, error) {
 }
 
 func (nt *RND320) SetBeep(enabled bool) error {
-	return nil
+	return opennetzteil.ErrNotImplemented
 }
 
-func (nt *RND320) GetChannels() ([]int, error) {
-	return []int{1}, nil
+func (nt *RND320) GetChannels() (int, error) {
+	return 1, nil
 }
 
 func (nt *RND320) GetCurrent(channel int) (float64, error) {
 	cmd := []byte(fmt.Sprintf("IOUT%d?", channel))
-	err := nt.SendCommand(nt.writer, cmd)
-	if err != nil {
-		return 0, err
-	}
-	buf := make([]byte, 64)
-	n, err := nt.reader.Read(buf)
+	resp, err := nt.RequestWithTimeout(cmd, 100*time.Millisecond)
 	if err != nil {
 		return 0, err
 	}
 
-	current, err := strconv.ParseFloat(string(buf[:n]), 32)
+	current, err := strconv.ParseFloat(string(resp), 32)
 	if err != nil {
 		return 0, err
 	}
@@ -119,7 +126,7 @@ func (nt *RND320) GetCurrent(channel int) (float64, error) {
 
 func (nt *RND320) SetCurrent(channel int, current float64) error {
 	cmd := []byte(fmt.Sprintf("ISET%d:%.2f", channel, current))
-	err := nt.SendCommand(nt.writer, cmd)
+	err := nt.SendCommand(cmd)
 	if err != nil {
 		return err
 	}
@@ -128,17 +135,12 @@ func (nt *RND320) SetCurrent(channel int, current float64) error {
 
 func (nt *RND320) GetVoltage(channel int) (float64, error) {
 	cmd := []byte(fmt.Sprintf("VOUT%d?", channel))
-	err := nt.SendCommand(nt.writer, cmd)
-	if err != nil {
-		return 0, err
-	}
-	buf := make([]byte, 64)
-	n, err := nt.reader.Read(buf)
+	resp, err := nt.RequestWithTimeout(cmd, 100*time.Millisecond)
 	if err != nil {
 		return 0, err
 	}
 
-	voltage, err := strconv.ParseFloat(string(buf[:n]), 32)
+	voltage, err := strconv.ParseFloat(string(resp), 32)
 	if err != nil {
 		return 0, err
 	}
@@ -147,7 +149,7 @@ func (nt *RND320) GetVoltage(channel int) (float64, error) {
 
 func (nt *RND320) SetVoltage(channel int, voltage float64) error {
 	cmd := []byte(fmt.Sprintf("VSET%d:%.2f", channel, voltage))
-	err := nt.SendCommand(nt.writer, cmd)
+	err := nt.SendCommand(cmd)
 	if err != nil {
 		return err
 	}
@@ -155,25 +157,28 @@ func (nt *RND320) SetVoltage(channel int, voltage float64) error {
 }
 
 func (nt *RND320) GetOut(channel int) (bool, error) {
-	return true, nil
+	return nt.GetMaster()
 }
 
 func (nt *RND320) SetOut(channel int, enabled bool) error {
-	return nil
+	if channel > 1 {
+		return fmt.Errorf("channel not avail")
+	}
+	return nt.SetMaster(enabled)
 }
 
 func (nt *RND320) GetOCP(channel int) (bool, error) {
-	return true, nil
+	return false, opennetzteil.ErrNotImplemented
 }
 
 func (nt *RND320) SetOCP(channel int, enabled bool) error {
-	return nil
+	return opennetzteil.ErrNotImplemented
 }
 
 func (nt *RND320) GetOVP(channel int) (bool, error) {
-	return true, nil
+	return false, opennetzteil.ErrNotImplemented
 }
 
 func (nt *RND320) SetOVP(channel int, enabled bool) error {
-	return nil
+	return opennetzteil.ErrNotImplemented
 }

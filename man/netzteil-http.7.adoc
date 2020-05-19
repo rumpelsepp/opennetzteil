@@ -19,112 +19,84 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 
 == API
 
-This API is also called the complete API.
 Every GET endpoint delivers data encoded in JSON (RFC7159).
 Every PUT endpoint accepts data encoded in JSON.
 If there is only one device available, a reduces API MAY be provided by implementations.
 All endpoints MUST be prepended the opennetzteil namespace indicator: `/_netzteil/api/`.
-The full endpoint path of the `/devices` endpoint looks like the following: `/_netzteil/api/devices`.
+The full path of the `/devices` endpoint looks like the following: `/_netzteil/api/devices`.
 
-GET `/devices`::
+GET|PUT (OPTIONAL) `/device`::
+    If **only one** device is served, this endpoint points to `/devices/0/…`.
+    This endpoint MAY use an HTTP 308 redirect to the appropriate endpoint.
+    The API using these endpoints is called reduced API.
+
+GET (REQUIRED) `/devices`::
     Query the available power supplies.
 
-GET `/devices/{id}/out`::
+GET (REQUIRED) `/devices/{id}/out`::
+    Query the status of the master output.
+    Returns a boolean JSON body: `true`, or `false`.
+
+PUT (REQUIRED) `/devices/{id}/out`::
+    Set the status of the master output.
+    Accepts a boolean JSON body: `true`, or `false`.
+
+GET (REQUIRED) `/devices/{id}/ident`::
+    Returns the device indentity.
+    Typically, this is the model name, e.g. `RND 320-KD3005P V2.0`.
+
+PUT (OPTIONAL) `/devices/{id}/beep`::
     TODO
 
-PUT `/devices/{id}/out`::
-    `true`
+GET (OPTIONAL) `/devices/{id}/status`::
+    Query status information.
+    The returned data is device specific.
 
-GET `/devices/{id}/ident`::
+GET/PUT (OPTIONAL) `/devices/{id}/channel`::
+    If the device has *only one* channel, this endpoint points to `/devices/{id}/channels/0`.
+    This endpoint MAY use an HTTP 308 redirect to the appropriate endpoint.
+    The API using these endpoints is called reduced API.
+
+GET (REQUIRED) `/devices/{id}/channels`::
+    Returns the number of available channels as an integer.
+
+GET (REQUIRED) `/devices/{id}/channels/{channel}/current`::
     TODO
 
-PUT `/devices/{id}/beep`::
+PUT (REQUIRED) `/devices/{id}/channels/{channel}/current`::
     TODO
 
-GET `/devices/{id}/channels`::
+GET (REQUIRED) `/devices/{id}/channels/{channel}/voltage`::
     TODO
 
-GET `/devices/{id}/channels/{channel}/current`::
-    TODO
-
-PUT `/devices/{id}/channels/{channel}/current`::
-    TODO
-
-GET `/devices/{id}/channels/{channel}/voltage`::
-    TODO
-
-PUT `/devices/{id}/channels/{channel}/voltage`::
+PUT (REQUIRED) `/devices/{id}/channels/{channel}/voltage`::
     `10.45`
 
-GET `/devices/{id}/channels/{channel}/out`::
+GET (OPTIONAL) `/devices/{id}/channels/{channel}/voltage/ws?interval={ms}`::
     TODO
 
-PUT `/devices/{id}/channels/{channel}/out`::
+GET (OPTIONAL) `/devices/{id}/channels/{channel}/current/ws?interval={ms}`::
     TODO
 
-GET `/devices/{id}/channels/{channel}/ocp`::
+GET (OPTIONAL) `/devices/{id}/channels/{channel}/measurements/ws?interval={ms}`::
     TODO
 
-PUT `/devices/{id}/channels/{channel}/ocp`::
+GET (REQUIRED) `/devices/{id}/channels/{channel}/out`::
     TODO
 
-GET `/devices/{id}/channels/{channel}/ovp`::
+PUT (REQUIRED) `/devices/{id}/channels/{channel}/out`::
     TODO
 
-PUT `/devices/{id}/channels/{channel}/ovp`::
+GET (REQUIRED) `/devices/{id}/channels/{channel}/ocp`::
     TODO
 
-== Reduced API
-
-The reduced API is optional if **only one** device is served via an opennetzteil application.
-The reduced API MAY be implemented using an HTTP 308 redirect to the appropriate endpoint of the complete API.
-If two or more devices are served, all endpoints of the reduced API MAY return a 404 error.
-If no 308 redirects are used, the responses MUST be served directly from the reduced API.
-All endpoints MUST be prepended the opennetzteil namespace indicator: `/_netzteil/api/`.
-
-GET `/device/out`::
+PUT (REQUIRED) `/devices/{id}/channels/{channel}/ocp`::
     TODO
 
-PUT `/device/out`::
-    `true`
-
-GET `/device/ident`::
+GET (REQUIRED) `/devices/{id}/channels/{channel}/ovp`::
     TODO
 
-PUT `/device/beep`::
-    TODO
-
-GET `/device/channels`::
-    TODO
-
-GET `/device/channels/{channel}/current`::
-    TODO
-
-PUT `/device/channels/{channel}/current`::
-    TODO
-
-GET `/device/channels/{channel}/voltage`::
-    TODO
-
-PUT `/device/channels/{channel}/voltage`::
-    `10.45`
-
-GET `/device/channels/{channel}/out`::
-    TODO
-
-PUT `/device/channels/{channel}/out`::
-    TODO
-
-GET `/device/channels/{channel}/ocp`::
-    TODO
-
-PUT `/device/channels/{channel}/ocp`::
-    TODO
-
-GET `/device/channels/{channel}/ovp`::
-    TODO
-
-PUT `/device/channels/{channel}/ovp`::
+PUT (REQUIRED) `/devices/{id}/channels/{channel}/ovp`::
     TODO
 
 == Authors

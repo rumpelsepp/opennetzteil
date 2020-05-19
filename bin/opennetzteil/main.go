@@ -18,10 +18,12 @@ func main() {
 	opts := runtimeOptions{}
 	opts.bind = ":8000"
 	netzteil := rnd.NewRND320("/dev/ttyACM0")
+	rlog.SetLogLevel(rlog.DEBUG)
 
 	if err := netzteil.Probe(); err != nil {
 		rlog.Critf("netzteil probe failed: %s", err)
 	}
+	rlog.Debug("probing complete")
 
 	apiSRV := opennetzteil.HTTPServer{
 		ReqLog:  os.Stderr,

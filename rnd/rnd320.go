@@ -12,6 +12,7 @@ import (
 type RND320 struct {
 	opennetzteil.NetzteilBase
 	ident string
+	file  *os.File
 }
 
 const (
@@ -31,15 +32,13 @@ func NewRND320(path string) *RND320 {
 	}
 
 	return &RND320{
-		NetzteilBase: opennetzteil.NetzteilBase{
-			Handle: file,
-		},
+		file: file,
 	}
 }
 
 func (nt *RND320) Probe() error {
 	cmd := []byte("*IDN?")
-	resp, err := nt.RequestWithTimeout(cmd, 100*time.Millisecond)
+	resp, err := nt.RequestWithTimeout(nt.file, cmd, 100*time.Millisecond)
 	if err != nil {
 		return err
 	}
@@ -49,7 +48,7 @@ func (nt *RND320) Probe() error {
 
 func (nt *RND320) Status() (interface{}, error) {
 	cmd := []byte("STATUS?")
-	resp, err := nt.RequestWithTimeout(cmd, 100*time.Millisecond)
+	resp, err := nt.RequestWithTimeout(nt.file, cmd, 100*time.Millisecond)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +95,7 @@ func (nt *RND320) SetMaster(enabled bool) error {
 		cmd = []byte("OUT0")
 	}
 
-	if err := nt.SendCommand(cmd); err != nil {
+	if err := nt.SendCommand(nt.file, cmd); err != nil {
 		return err
 	}
 	return nil
@@ -116,7 +115,7 @@ func (nt *RND320) GetChannels() (int, error) {
 
 func (nt *RND320) GetCurrent(channel int) (float64, error) {
 	cmd := []byte(fmt.Sprintf("IOUT%d?", channel))
-	resp, err := nt.RequestWithTimeout(cmd, 100*time.Millisecond)
+	resp, err := nt.RequestWithTimeout(nt.file, cmd, 100*time.Millisecond)
 	if err != nil {
 		return 0, err
 	}
@@ -130,7 +129,7 @@ func (nt *RND320) GetCurrent(channel int) (float64, error) {
 
 func (nt *RND320) SetCurrent(channel int, current float64) error {
 	cmd := []byte(fmt.Sprintf("ISET%d:%.2f", channel, current))
-	err := nt.SendCommand(cmd)
+	err := nt.SendCommand(nt.file, cmd)
 	if err != nil {
 		return err
 	}
@@ -139,7 +138,7 @@ func (nt *RND320) SetCurrent(channel int, current float64) error {
 
 func (nt *RND320) GetVoltage(channel int) (float64, error) {
 	cmd := []byte(fmt.Sprintf("VOUT%d?", channel))
-	resp, err := nt.RequestWithTimeout(cmd, 100*time.Millisecond)
+	resp, err := nt.RequestWithTimeout(nt.file, cmd, 100*time.Millisecond)
 	if err != nil {
 		return 0, err
 	}
@@ -153,7 +152,7 @@ func (nt *RND320) GetVoltage(channel int) (float64, error) {
 
 func (nt *RND320) SetVoltage(channel int, voltage float64) error {
 	cmd := []byte(fmt.Sprintf("VSET%d:%.2f", channel, voltage))
-	err := nt.SendCommand(cmd)
+	err := nt.SendCommand(nt.file, cmd)
 	if err != nil {
 		return err
 	}

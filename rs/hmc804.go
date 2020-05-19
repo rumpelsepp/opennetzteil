@@ -3,15 +3,14 @@ package rs
 import (
 	"fmt"
 	"net"
-	"time"
 
 	"git.sr.ht/~rumpelsepp/opennetzteil"
-	"git.sr.ht/~rumpelsepp/rlog"
 )
 
 type HMC804 struct {
 	opennetzteil.NetzteilBase
-	ident string
+	ident  string
+	target string
 }
 
 type Status struct {
@@ -19,32 +18,33 @@ type Status struct {
 	Output      bool
 }
 
-// TODO: implement http stype req/response stuff
-
 func NewHMC804(target string) *HMC804 {
-	fmt.Println(target)
-	conn, err := net.Dial("tcp", target)
-	if err != nil {
-		panic(err)
-	}
-
-	tcpConn := conn.(*net.TCPConn)
-	if err := tcpConn.SetKeepAlive(true); err != nil {
-		rlog.Warningf("set KeepAlive failed: %s", err)
-	}
-	if err := tcpConn.SetKeepAlivePeriod(15 * time.Second); err != nil {
-		rlog.Warningf("set KeepAlivePeriod failed: %s", err)
-	}
 	return &HMC804{
-		NetzteilBase: opennetzteil.NetzteilBase{
-			Handle: tcpConn,
-		},
+		target: target,
 	}
+}
+
+func (nt *HMC804) send(cmd []byte) error {
+	conn, err := net.Dial("tcp", nt.target)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	return nt.SendCommandLine(conn, cmd)
+}
+
+func (nt *HMC804) request(cmd []byte) ([]byte, error) {
+	conn, err := net.Dial("tcp", nt.target)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	return nt.RequestLine(conn, cmd)
 }
 
 func (nt *HMC804) Probe() error {
 	cmd := []byte("*IDN?")
-	resp, err := nt.RequestLine(cmd)
+	resp, err := nt.request(cmd)
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (nt *HMC804) SetMaster(enabled bool) error {
 	} else {
 		cmd = []byte("OUTP:MAST OFF")
 	}
-	if err := nt.SendCommandLine(cmd); err != nil {
+	if err := nt.send(cmd); err != nil {
 		return err
 	}
 	return nil
@@ -107,7 +107,7 @@ func (nt *HMC804) GetOut(channel int) (bool, error) {
 
 func (nt *HMC804) SetOut(channel int, enabled bool) error {
 	cmd := []byte(fmt.Sprintf("INST OUT%d", channel))
-	if err := nt.SendCommandLine(cmd); err != nil {
+	if err := nt.send(cmd); err != nil {
 		return err
 	}
 	if enabled {
@@ -115,7 +115,7 @@ func (nt *HMC804) SetOut(channel int, enabled bool) error {
 	} else {
 		cmd = []byte("OUTP:CHAN OFF")
 	}
-	if err := nt.SendCommandLine(cmd); err != nil {
+	if err := nt.send(cmd); err != nil {
 		return err
 	}
 	return nil

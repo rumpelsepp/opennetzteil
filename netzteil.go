@@ -37,28 +37,27 @@ type Netzteil interface {
 }
 
 type NetzteilBase struct {
-	mutex  sync.Mutex
-	Handle io.ReadWriteCloser
+	mutex sync.Mutex
 }
 
-func (nt *NetzteilBase) SendCommand(cmd []byte) error {
+func (nt *NetzteilBase) SendCommand(handle io.Writer, cmd []byte) error {
 	nt.mutex.Lock()
 	defer nt.mutex.Unlock()
-	_, err := io.Copy(nt.Handle, bytes.NewReader(cmd))
+	_, err := io.Copy(handle, bytes.NewReader(cmd))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (nt *NetzteilBase) SendCommandLine(cmd []byte) error {
-	return nt.SendCommand(append(cmd, '\n'))
+func (nt *NetzteilBase) SendCommandLine(handle io.Writer, cmd []byte) error {
+	return nt.SendCommand(handle, append(cmd, '\n'))
 }
 
-func (nt *NetzteilBase) RequestWithTimeout(cmd []byte, timeout time.Duration) ([]byte, error) {
+func (nt *NetzteilBase) RequestWithTimeout(handle io.ReadWriter, cmd []byte, timeout time.Duration) ([]byte, error) {
 	nt.mutex.Lock()
 	defer nt.mutex.Unlock()
-	_, err := io.Copy(nt.Handle, bytes.NewReader(cmd))
+	_, err := io.Copy(handle, bytes.NewReader(cmd))
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +68,7 @@ func (nt *NetzteilBase) RequestWithTimeout(cmd []byte, timeout time.Duration) ([
 	)
 	for {
 		dl := time.Now().Add(timeout)
-		switch r := nt.Handle.(type) {
+		switch r := handle.(type) {
 		case *os.File:
 			err = r.SetReadDeadline(dl)
 			if err != nil {
@@ -83,7 +82,7 @@ func (nt *NetzteilBase) RequestWithTimeout(cmd []byte, timeout time.Duration) ([
 		default:
 			return nil, fmt.Errorf("unsupported reader: %t", r)
 		}
-		n, err = nt.Handle.Read(buf[read:])
+		n, err = handle.Read(buf[read:])
 		read += n
 		if err != nil {
 			if os.IsTimeout(err) {
@@ -94,31 +93,31 @@ func (nt *NetzteilBase) RequestWithTimeout(cmd []byte, timeout time.Duration) ([
 	}
 }
 
-func (nt *NetzteilBase) Request(cmd []byte) ([]byte, error) {
+func (nt *NetzteilBase) Request(handle io.ReadWriter, cmd []byte) ([]byte, error) {
 	nt.mutex.Lock()
 	defer nt.mutex.Unlock()
-	_, err := io.Copy(nt.Handle, bytes.NewReader(cmd))
+	_, err := io.Copy(handle, bytes.NewReader(cmd))
 	if err != nil {
 		return nil, err
 	}
 
 	var buf bytes.Buffer
-	_, err = io.Copy(&buf, nt.Handle)
+	_, err = io.Copy(&buf, handle)
 	if err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
 }
 
-func (nt *NetzteilBase) RequestLine(cmd []byte) ([]byte, error) {
+func (nt *NetzteilBase) RequestLine(handle io.ReadWriter, cmd []byte) ([]byte, error) {
 	nt.mutex.Lock()
 	defer nt.mutex.Unlock()
-	_, err := io.Copy(nt.Handle, bytes.NewReader(append(cmd, '\n')))
+	_, err := io.Copy(handle, bytes.NewReader(append(cmd, '\n')))
 	if err != nil {
 		return nil, err
 	}
 
-	reader := bufio.NewReader(nt.Handle)
+	reader := bufio.NewReader(handle)
 	line, _, err := reader.ReadLine()
 	if err != nil {
 		return nil, err

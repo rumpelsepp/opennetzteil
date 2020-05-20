@@ -6,17 +6,25 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"git.sr.ht/~rumpelsepp/helpers"
 	"git.sr.ht/~rumpelsepp/rlog"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 )
 
 type HTTPServer struct {
 	ReqLog  io.Writer
 	Devices []Netzteil
 	Logger  *rlog.Logger
+}
+
+type measurement struct {
+	Current float64   `json:"current,omitempty"`
+	Voltage float64   `json:"voltage,omitempty"`
+	Time    time.Time `json:"time"`
 }
 
 func (s *HTTPServer) lookupDevice(vars map[string]string) (Netzteil, error) {
@@ -28,6 +36,16 @@ func (s *HTTPServer) lookupDevice(vars map[string]string) (Netzteil, error) {
 		return nil, fmt.Errorf("device does not exist")
 	}
 	return s.Devices[id], nil
+}
+
+// https://godoc.org/github.com/gorilla/websocket#hdr-Control_Messages
+func readLoop(c *websocket.Conn) {
+	for {
+		if _, _, err := c.NextReader(); err != nil {
+			c.Close()
+			break
+		}
+	}
 }
 
 // Handlers for full API
@@ -204,6 +222,51 @@ func (s *HTTPServer) getVoltage(w http.ResponseWriter, r *http.Request) {
 	helpers.SendJSON(w, voltage)
 }
 
+func (s *HTTPServer) getVoltageWS(w http.ResponseWriter, r *http.Request) {
+	var (
+		vars = mux.Vars(r)
+	)
+	dev, err := s.lookupDevice(vars)
+	if err != nil {
+		helpers.SendJSONError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// TODO: Make a helper for this
+	channel, err := strconv.Atoi(vars["channel"])
+	if err != nil {
+		helpers.SendJSONError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	query := r.URL.Query()
+	interval, _ := strconv.ParseUint(query.Get("interval"), 10, 32)
+	upgrader := websocket.Upgrader{}
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		rlog.Err(err)
+		return
+	}
+	defer conn.Close()
+	go readLoop(conn)
+
+	for {
+		voltage, err := dev.GetVoltage(channel)
+		if err != nil {
+			m := map[string]string{"error": err.Error()}
+			if err := conn.WriteJSON(m); err != nil {
+				return
+			}
+			continue
+		}
+		m := measurement{Time: time.Now(), Voltage: voltage}
+		if err := conn.WriteJSON(m); err != nil {
+			return
+		}
+		time.Sleep(time.Duration(interval) * time.Millisecond)
+	}
+}
+
 func (s *HTTPServer) putVoltage(w http.ResponseWriter, r *http.Request) {
 	var (
 		req  float64
@@ -316,8 +379,11 @@ func (s *HTTPServer) CreateHandler() http.Handler {
 	api.HandleFunc("/devices/{id:[0-9]+}/channels", s.getChannels).Methods(http.MethodGet)
 	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/current", s.getCurrent).Methods(http.MethodGet)
 	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/current", s.putCurrent).Methods(http.MethodPut)
+	// api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/current/ws", s.getCurrentWS).Methods(http.MethodGet).Queries("interval", "{interval:[0-9]+}")
 	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/voltage", s.getVoltage).Methods(http.MethodGet)
 	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/voltage", s.putVoltage).Methods(http.MethodPut)
+	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/voltage/ws", s.getVoltageWS).Methods(http.MethodGet).Queries("interval", "{interval:[0-9]+}")
+	// api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/measurements/ws", s.getMeasurementsWS).Methods(http.MethodGet).Queries("interval", "{interval:[0-9]+}")
 	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/out", s.getOut).Methods(http.MethodGet)
 	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/out", s.putOut).Methods(http.MethodPut)
 	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/ocp", s.getOcp).Methods(http.MethodGet)

@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"git.sr.ht/~rumpelsepp/opennetzteil"
-	"git.sr.ht/~rumpelsepp/opennetzteil/rnd"
-	"git.sr.ht/~rumpelsepp/opennetzteil/rs"
+	"git.sr.ht/~rumpelsepp/opennetzteil/devices/rnd"
+	"git.sr.ht/~rumpelsepp/opennetzteil/devices/rs"
 	"git.sr.ht/~rumpelsepp/rlog"
 	"git.sr.ht/~sircmpwn/getopt"
 	"github.com/pelletier/go-toml"

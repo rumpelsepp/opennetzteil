@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"git.sr.ht/~rumpelsepp/opennetzteil"
+	"git.sr.ht/~rumpelsepp/opennetzteil/devices/dummy"
 	"git.sr.ht/~rumpelsepp/opennetzteil/devices/rnd"
 	"git.sr.ht/~rumpelsepp/opennetzteil/devices/rs"
 	"git.sr.ht/~rumpelsepp/rlog"
@@ -68,6 +69,8 @@ func initNetzteile(conf *config) ([]opennetzteil.Netzteil, error) {
 		}
 
 		switch nc.Model {
+		case "dummy":
+			nt = &dummy.DummyDevice{}
 		case "rnd320":
 			if handle.Scheme != "file" {
 				return nil, fmt.Errorf("invalid handle for: %s", nc.Model)

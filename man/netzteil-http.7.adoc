@@ -17,18 +17,44 @@ Use a reverse proxy for implementing more sophisticated HTTP techniques.
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in BCP 14 [RFC2119] [RFC8174] when, and only when, they appear in all capitals, as shown here.
 
+== Data Format
+
+The API exclusively uses data encoded in the JSON format (RFC7159).
+The data is encoded in the most minimal way. 
+For instance, an endpoint delivering a float value encodes this as a plain JSON float: `10.501`.
+No dictionary or more complex data structures are needed.
+The data type of each endpoint in this specification is mentioned in the appropriate endpoint description.
+
+An exception to this rule are the `…/voltage/ws`, `…/current/ws`, and `…/measurements/ws` endpoints.
+In order to unify these three interfaces, the returned data looks like the following:
+
+----
+{
+    "voltage":10.100000381469727,
+    "current":5,
+    "time":"2020-05-19T23:41:46.305841551+02:00"
+}
+----
+
+Empty keys SHOULD be omitted.
+The `time` key is REQUIRED.
+
 == API
 
-Every GET endpoint delivers data encoded in JSON (RFC7159).
+Every GET endpoint delivers data encoded in JSON.
 Every PUT endpoint accepts data encoded in JSON.
 If there is only one device available, a reduces API MAY be provided by implementations.
 All endpoints MUST be prepended the opennetzteil namespace indicator: `/_netzteil/api/`.
 The full path of the `/devices` endpoint looks like the following: `/_netzteil/api/devices`.
 
+Some endpoints include the wording “points to …”.
+This endpoint MAY use an HTTP 308 redirect to the appropriate, pointed endpoint.
+The API using redirects to other endpoints is called reduced API.
+
+The `|` sign indicates a logical `or`.
+
 GET|PUT (OPTIONAL) `/device`::
     If **only one** device is served, this endpoint points to `/devices/0/…`.
-    This endpoint MAY use an HTTP 308 redirect to the appropriate endpoint.
-    The API using these endpoints is called reduced API.
 
 GET (REQUIRED) `/devices`::
     Query the available power supplies.
@@ -45,32 +71,39 @@ GET (REQUIRED) `/devices/{id}/ident`::
     Returns the device identity.
     Typically, this is the model name, e.g. `RND 320-KD3005P V2.0`.
 
+GET (OPTIONAL) `/devices/{id}/raw/ws`::
+    Grab a websocket exposing a raw connection to the device.
+    Custom commands (not exposed by this HTTP API) can be accessed via this endpoint.
+
 PUT (OPTIONAL) `/devices/{id}/beep`::
     TODO
 
 GET (OPTIONAL) `/devices/{id}/status`::
     Query status information.
-    The returned data is device specific.
+    The returned data is device specific, it is RECOMMENDED to use a JSON dict with descriptive keys.
 
 GET|PUT (OPTIONAL) `/devices/{id}/channel`::
     If the device has *only one* channel, this endpoint points to `/devices/{id}/channels/0`.
-    This endpoint MAY use an HTTP 308 redirect to the appropriate endpoint.
-    The API using these endpoints is called reduced API.
 
 GET (REQUIRED) `/devices/{id}/channels`::
-    Returns the number of available channels as an integer.
+    Returns the number of available channels.
+    Returns an integer value.
 
 GET (REQUIRED) `/devices/{id}/channels/{channel}/current`::
-    TODO
+    Returns the present current in `A`.
+    Returns a float value.
 
 PUT (REQUIRED) `/devices/{id}/channels/{channel}/current`::
-    TODO
+    Sets the maximum current `A`.
+    Accepts a float value.
 
 GET (REQUIRED) `/devices/{id}/channels/{channel}/voltage`::
-    TODO
+    Returns the present voltage in `V`.
+    Returns a float value.
 
 PUT (REQUIRED) `/devices/{id}/channels/{channel}/voltage`::
-    `10.45`
+    Sets the maximum voltage `V`.
+    Accepts a float value.
 
 GET (OPTIONAL) `/devices/{id}/channels/{channel}/voltage/ws?interval={ms}`::
     TODO
@@ -82,10 +115,12 @@ GET (OPTIONAL) `/devices/{id}/channels/{channel}/measurements/ws?interval={ms}`:
     TODO
 
 GET (REQUIRED) `/devices/{id}/channels/{channel}/out`::
-    TODO
+    Query the status of the channel `channel` of device with the id `id`.
+    Returns a boolean value.
 
 PUT (REQUIRED) `/devices/{id}/channels/{channel}/out`::
-    TODO
+    Sets the status of the channel `channel` of device with the id `id`.
+    Accepts a boolean value.
 
 GET (REQUIRED) `/devices/{id}/channels/{channel}/ocp`::
     TODO
@@ -103,3 +138,8 @@ PUT (REQUIRED) `/devices/{id}/channels/{channel}/ovp`::
 
 Maintained by Stefan Tatschner <stefan@rumpelsepp.org>.
 The Git repository is hosted here: https://git.sr.ht/~rumpelsepp/opennetzteil
+
+== License
+
+This document published under the Attribution-ShareAlike 4.0 International license.
+The license text is availabe here: https://creativecommons.org/licenses/by-sa/4.0/

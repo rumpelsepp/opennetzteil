@@ -13,10 +13,12 @@ import (
 	"git.sr.ht/~rumpelsepp/opennetzteil/devices/dummy"
 	"git.sr.ht/~rumpelsepp/opennetzteil/devices/rnd"
 	"git.sr.ht/~rumpelsepp/opennetzteil/devices/rs"
-	"git.sr.ht/~rumpelsepp/rlog"
 	"git.sr.ht/~sircmpwn/getopt"
+	"github.com/Fraunhofer-AISEC/penlog"
 	"github.com/pelletier/go-toml"
 )
+
+var logger = penlog.NewLogger("cli", os.Stderr)
 
 type runtimeOptions struct {
 	config  string
@@ -102,7 +104,8 @@ func main() {
 
 	err := getopt.Parse()
 	if err != nil {
-		rlog.Crit(err)
+		logger.LogCritical(err)
+		os.Exit(1)
 	}
 
 	if opts.help {
@@ -111,25 +114,27 @@ func main() {
 	}
 
 	if opts.verbose {
-		rlog.SetLogLevel(rlog.DEBUG)
+		logger.SetLogLevel(penlog.PrioDebug)
 	}
 
 	config, err := loadConfig(opts.config)
 	if err != nil {
-		rlog.Crit(err)
+		logger.LogCritical(err)
+		os.Exit(1)
 	}
 
 	netzteile, err := initNetzteile(config)
 	if err != nil {
-		rlog.Crit(err)
+		logger.LogCritical(err)
+		os.Exit(1)
 	}
 
 	apiSRV := opennetzteil.HTTPServer{
 		ReqLog:  os.Stderr,
-		Logger:  rlog.NewLogger(os.Stderr),
+		Logger:  penlog.NewLogger("http", os.Stderr),
 		Devices: netzteile,
 	}
-	apiSRV.Logger.SetLogLevel(rlog.DEBUG)
+	apiSRV.Logger.SetLogLevel(penlog.PrioDebug)
 	srv := &http.Server{
 		Addr:         config.HTTP.Bind,
 		WriteTimeout: time.Second * 15,
@@ -139,6 +144,7 @@ func main() {
 	}
 
 	if err := srv.ListenAndServe(); err != nil {
-		rlog.Critln(err)
+		logger.LogCritical(err)
+		os.Exit(1)
 	}
 }

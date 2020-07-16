@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"git.sr.ht/~rumpelsepp/helpers"
-	"git.sr.ht/~rumpelsepp/rlog"
+	"github.com/Fraunhofer-AISEC/penlog"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -18,7 +18,7 @@ import (
 type HTTPServer struct {
 	ReqLog  io.Writer
 	Devices []Netzteil
-	Logger  *rlog.Logger
+	Logger  *penlog.Logger
 }
 
 type measurement struct {
@@ -59,7 +59,7 @@ func (s *HTTPServer) getDevices(w http.ResponseWriter, r *http.Request) {
 		}
 		resp = append(resp, ident)
 	}
-	s.Logger.Debugf("device list: %v", resp)
+	s.Logger.LogDebugf("device list: %v", resp)
 	helpers.SendJSON(w, resp)
 }
 
@@ -244,7 +244,7 @@ func (s *HTTPServer) getVoltageWS(w http.ResponseWriter, r *http.Request) {
 	upgrader := websocket.Upgrader{}
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		rlog.Err(err)
+		s.Logger.LogError(err)
 		return
 	}
 	defer conn.Close()

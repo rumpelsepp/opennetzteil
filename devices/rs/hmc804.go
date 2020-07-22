@@ -76,12 +76,7 @@ func (nt *HMC804) Status() (interface{}, error) {
 }
 
 func (nt *HMC804) GetMaster() (bool, error) {
-	conn, err := net.Dial("tcp", nt.target)
-	if err != nil {
-		return false, err
-	}
-	defer conn.Close()
-	resp, err := nt.RequestLine(conn, []byte("OUTP:MAST:STAT?"))
+	resp, err := nt.request([]byte("OUTP:MAST:STAT?"))
 	if err != nil {
 		return false, err
 	}
@@ -119,32 +114,59 @@ func (nt *HMC804) GetChannels() (int, error) {
 }
 
 func (nt *HMC804) GetCurrent(channel int) (float64, error) {
-	return 0, opennetzteil.ErrNotImplemented
+	cmd := []byte(fmt.Sprintf("INST OUT%d", channel))
+	if err := nt.send(cmd); err != nil {
+		return 0, err
+	}
+	resp, err := nt.request([]byte("CURR?"))
+	if err != nil {
+		return 0, err
+	}
+	return strconv.ParseFloat(string(resp), 32)
 }
 
 func (nt *HMC804) SetCurrent(channel int, current float64) error {
-	return opennetzteil.ErrNotImplemented
+	var cmds [][]byte
+	cmd := []byte(fmt.Sprintf("INST OUT%d", channel))
+	cmds = append(cmds, cmd)
+	cmd = []byte(fmt.Sprintf("CURR %.3f", current))
+	cmds = append(cmds, cmd)
+	if err := nt.sendBatched(cmds); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (nt *HMC804) GetVoltage(channel int) (float64, error) {
-	return 0, opennetzteil.ErrNotImplemented
+	cmd := []byte(fmt.Sprintf("INST OUT%d", channel))
+	if err := nt.send(cmd); err != nil {
+		return 0, err
+	}
+	resp, err := nt.request([]byte("VOLT?"))
+	if err != nil {
+		return 0, err
+	}
+	return strconv.ParseFloat(string(resp), 32)
 }
 
 func (nt *HMC804) SetVoltage(channel int, voltage float64) error {
-	return opennetzteil.ErrNotImplemented
+	var cmds [][]byte
+	cmd := []byte(fmt.Sprintf("INST OUT%d", channel))
+	cmds = append(cmds, cmd)
+	cmd = []byte(fmt.Sprintf("VOLT %.3f", voltage))
+	cmds = append(cmds, cmd)
+	if err := nt.sendBatched(cmds); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (nt *HMC804) GetOut(channel int) (bool, error) {
-	conn, err := net.Dial("tcp", nt.target)
-	if err != nil {
-		return false, err
-	}
-	defer conn.Close()
 	cmd := []byte(fmt.Sprintf("INST OUT%d", channel))
 	if err := nt.send(cmd); err != nil {
 		return false, err
 	}
-	resp, err := nt.RequestLine(conn, []byte("OUTP:STAT?"))
+	resp, err := nt.request([]byte("OUTP:STAT?"))
 	if err != nil {
 		return false, err
 	}

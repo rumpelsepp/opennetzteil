@@ -35,7 +35,7 @@ func (s *HTTPServer) lookupDevice(vars map[string]string) (Netzteil, error) {
 	// Opennetzteil ids start with 1.
 	// Thus it need to be decremented for the list lookup.
 	id--
-	if len(s.Devices)-1 < id {
+	if id < 0 || len(s.Devices)-1 < id {
 		return nil, fmt.Errorf("device does not exist")
 	}
 	return s.Devices[id], nil

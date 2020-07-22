@@ -43,12 +43,11 @@ func (nt *HMC804) request(cmd []byte) ([]byte, error) {
 }
 
 func (nt *HMC804) Probe() error {
-	cmd := []byte("*IDN?")
-	resp, err := nt.request(cmd)
+	ident, err := nt.GetIdent()
 	if err != nil {
 		return err
 	}
-	nt.ident = string(resp)
+	nt.ident = ident
 	return nil
 }
 
@@ -74,7 +73,12 @@ func (nt *HMC804) SetMaster(enabled bool) error {
 }
 
 func (nt *HMC804) GetIdent() (string, error) {
-	return nt.ident, nil
+	cmd := []byte("*IDN?")
+	resp, err := nt.request(cmd)
+	if err != nil {
+		return "", err
+	}
+	return string(resp), nil
 }
 
 func (nt *HMC804) SetBeep(enabled bool) error {

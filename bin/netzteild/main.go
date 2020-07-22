@@ -82,7 +82,6 @@ func initNetzteile(conf *config) ([]opennetzteil.Netzteil, error) {
 			if handle.Scheme != "tcp" {
 				return nil, fmt.Errorf("invalid handle for: %s", nc.Model)
 			}
-			fmt.Println(handle.Host)
 			nt = rs.NewHMC804(handle.Host)
 		default:
 			return nil, fmt.Errorf("unsupported power supply")

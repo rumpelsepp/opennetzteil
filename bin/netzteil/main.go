@@ -146,8 +146,8 @@ func (c *netzteilClient) getMaster(device uint) (bool, error) {
 
 func main() {
 	var (
-		device  = pflag.UintP("device", "d", 0, "device index")
-		channel = pflag.UintP("channel", "c", 0, "channel index")
+		device  = pflag.UintP("device", "d", 1, "device index")
+		channel = pflag.UintP("channel", "c", 1, "channel index")
 		op      = pflag.StringP("operation", "o", "get", "operation, either 'get' or 'set'")
 		opArg   = pflag.StringP("arg", "a", "", "argument for the operation")
 		ep      = pflag.StringP("endpoint", "e", "", "endpoint to manipulate: master, out")

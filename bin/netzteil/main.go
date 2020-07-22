@@ -101,8 +101,9 @@ func (c *netzteilClient) setOutParam(device, channel uint, state bool) error {
 
 func (c *netzteilClient) getOutParam(device, channel uint) (bool, error) {
 	var (
-		uri     = *c.baseURL
-		reqPath string
+		uri        = *c.baseURL
+		reqPath    string
+		parsedResp bool
 	)
 	// Special case for master channel
 	if channel == 0 {
@@ -116,16 +117,13 @@ func (c *netzteilClient) getOutParam(device, channel uint) (bool, error) {
 		return false, err
 	}
 	logger.LogDebug(resp)
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		logger.LogError(err)
-		logger.LogError(resp)
-	}
-	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		logger.LogErrorf(string(body))
+		return false, fmt.Errorf("http error")
 	}
-	return strconv.ParseBool(string(body))
+	if err := recvJSON(resp, &parsedResp); err != nil {
+		return false, err
+	}
+	return parsedResp, nil
 }
 
 func (c *netzteilClient) setChannel(device uint, channel uint, state bool) error {

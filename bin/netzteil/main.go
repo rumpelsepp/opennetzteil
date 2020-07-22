@@ -16,6 +16,11 @@ import (
 	"github.com/spf13/pflag"
 )
 
+const (
+	operationSET = "set"
+	operationGET = "get"
+)
+
 var logger = penlog.NewLogger("cli", os.Stderr)
 
 type netzteilClient struct {
@@ -35,18 +40,24 @@ func recvJSON(r *http.Response, data interface{}) error {
 	return nil
 }
 
-func (c *netzteilClient) setMaster(device uint, state bool) error {
+func (c *netzteilClient) setOutParam(device, channel uint, state bool) error {
 	var (
-		reqPath = fmt.Sprintf("/_netzteil/api/devices/%d/out", device)
 		uri     = *c.baseURL
+		reqPath string
 		body    string
 	)
+	// Special case for master channel
+	if channel == 0 {
+		reqPath = fmt.Sprintf("/_netzteil/api/devices/%d/out", device)
+	} else {
+		reqPath = fmt.Sprintf("/_netzteil/api/devices/%d/channels/%d/out", device, channel)
+	}
+	uri.Path = path.Join(uri.Path, reqPath)
 	if state {
 		body = "true"
 	} else {
 		body = "false"
 	}
-	uri.Path = path.Join(uri.Path, reqPath)
 	req, err := http.NewRequest(http.MethodPut, uri.String(), strings.NewReader(body))
 	if err != nil {
 		return err
@@ -56,30 +67,67 @@ func (c *netzteilClient) setMaster(device uint, state bool) error {
 		return err
 	}
 	logger.LogDebug(resp)
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		logger.LogError(err)
+		logger.LogError(resp)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		logger.LogErrorf(string(respBody))
+	}
 	return nil
 }
 
-func (c *netzteilClient) getMaster(device uint) (bool, error) {
+func (c *netzteilClient) getOutParam(device, channel uint) (bool, error) {
 	var (
-		reqPath = fmt.Sprintf("/_netzteil/api/devices/%d/out", device)
 		uri     = *c.baseURL
+		reqPath string
 	)
+	// Special case for master channel
+	if channel == 0 {
+		reqPath = fmt.Sprintf("/_netzteil/api/devices/%d/out", device)
+	} else {
+		reqPath = fmt.Sprintf("/_netzteil/api/devices/%d/channels/%d/out", device, channel)
+	}
 	uri.Path = path.Join(uri.Path, reqPath)
 	resp, err := c.client.Get(uri.String())
 	if err != nil {
 		return false, err
 	}
 	logger.LogDebug(resp)
-	var parsedResp bool
-	if err := recvJSON(resp, &parsedResp); err != nil {
-		return false, err
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		logger.LogError(err)
+		logger.LogError(resp)
 	}
-	return parsedResp, nil
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		logger.LogErrorf(string(body))
+	}
+	return strconv.ParseBool(string(body))
+}
+
+func (c *netzteilClient) setChannel(device uint, channel uint, state bool) error {
+	return c.setOutParam(device, channel, state)
+}
+
+func (c *netzteilClient) setMaster(device uint, state bool) error {
+	return c.setOutParam(device, 0, state)
+}
+
+func (c *netzteilClient) getChannel(device uint, channel uint) (bool, error) {
+	return c.getOutParam(device, channel)
+}
+
+func (c *netzteilClient) getMaster(device uint) (bool, error) {
+	return c.getOutParam(device, 0)
 }
 
 func main() {
 	var (
 		device  = pflag.UintP("device", "d", 0, "device index")
+		channel = pflag.UintP("channel", "c", 0, "channel index")
 		op      = pflag.StringP("operation", "o", "get", "operation, either 'get' or 'set'")
 		opArg   = pflag.StringP("arg", "a", "", "argument for the operation")
 		ep      = pflag.StringP("endpoint", "e", "", "endpoint to manipulate")
@@ -98,7 +146,7 @@ func main() {
 		os.Exit(1)
 	}
 	*op = strings.ToLower(*op)
-	if *op != "set" && *op != "get" {
+	if *op != operationGET && *op != operationSET {
 		logger.LogCritical("invalid operation: either 'get' or 'set'")
 		os.Exit(1)
 	}
@@ -111,16 +159,36 @@ func main() {
 	}
 
 	switch *ep {
+	case "channel":
+		switch *op {
+		case operationGET:
+			state, err := client.getChannel(*device, *channel)
+			if err != nil {
+				logger.LogCritical(err)
+				os.Exit(1)
+			}
+			fmt.Println(state)
+		case operationSET:
+			arg, err := strconv.ParseBool(*opArg)
+			if err != nil {
+				logger.LogCritical(err)
+				os.Exit(1)
+			}
+			if err := client.setChannel(*device, *channel, arg); err != nil {
+				logger.LogCritical(err)
+				os.Exit(1)
+			}
+		}
 	case "master":
 		switch *op {
-		case "get":
+		case operationGET:
 			state, err := client.getMaster(*device)
 			if err != nil {
 				logger.LogCritical(err)
 				os.Exit(1)
 			}
 			fmt.Println(state)
-		case "set":
+		case operationSET:
 			arg, err := strconv.ParseBool(*opArg)
 			if err != nil {
 				logger.LogCritical(err)

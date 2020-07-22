@@ -3,6 +3,7 @@ package rs
 import (
 	"fmt"
 	"net"
+	"strconv"
 
 	"git.sr.ht/~rumpelsepp/opennetzteil"
 )
@@ -75,7 +76,16 @@ func (nt *HMC804) Status() (interface{}, error) {
 }
 
 func (nt *HMC804) GetMaster() (bool, error) {
-	return false, opennetzteil.ErrNotImplemented
+	conn, err := net.Dial("tcp", nt.target)
+	if err != nil {
+		return false, err
+	}
+	defer conn.Close()
+	resp, err := nt.RequestLine(conn, []byte("OUTP:MAST:STAT?"))
+	if err != nil {
+		return false, err
+	}
+	return strconv.ParseBool(string(resp))
 }
 
 func (nt *HMC804) SetMaster(enabled bool) error {
@@ -125,7 +135,20 @@ func (nt *HMC804) SetVoltage(channel int, voltage float64) error {
 }
 
 func (nt *HMC804) GetOut(channel int) (bool, error) {
-	return nt.GetMaster()
+	conn, err := net.Dial("tcp", nt.target)
+	if err != nil {
+		return false, err
+	}
+	defer conn.Close()
+	cmd := []byte(fmt.Sprintf("INST OUT%d", channel))
+	if err := nt.send(cmd); err != nil {
+		return false, err
+	}
+	resp, err := nt.RequestLine(conn, []byte("OUTP:STAT?"))
+	if err != nil {
+		return false, err
+	}
+	return strconv.ParseBool(string(resp))
 }
 
 func (nt *HMC804) SetOut(channel int, enabled bool) error {

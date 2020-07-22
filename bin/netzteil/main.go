@@ -23,11 +23,6 @@ const (
 
 var logger = penlog.NewLogger("cli", os.Stderr)
 
-type netzteilClient struct {
-	client  http.Client
-	baseURL *url.URL
-}
-
 func recvJSON(r *http.Response, data interface{}) error {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -38,6 +33,31 @@ func recvJSON(r *http.Response, data interface{}) error {
 		return fmt.Errorf("json decoding error: %s", string(body))
 	}
 	return nil
+}
+
+type netzteilClient struct {
+	client  http.Client
+	baseURL *url.URL
+}
+
+func (c *netzteilClient) getDeviceList() ([]string, error) {
+	var (
+		uri        = *c.baseURL
+		reqPath    = "/_netzteil/api/devices"
+		parsedResp []string
+	)
+	uri.Path = path.Join(uri.Path, reqPath)
+	resp, err := c.client.Get(uri.String())
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("http error")
+	}
+	if err := recvJSON(resp, &parsedResp); err != nil {
+		return nil, err
+	}
+	return parsedResp, nil
 }
 
 func (c *netzteilClient) setOutParam(device, channel uint, state bool) error {
@@ -130,7 +150,7 @@ func main() {
 		channel = pflag.UintP("channel", "c", 0, "channel index")
 		op      = pflag.StringP("operation", "o", "get", "operation, either 'get' or 'set'")
 		opArg   = pflag.StringP("arg", "a", "", "argument for the operation")
-		ep      = pflag.StringP("endpoint", "e", "", "endpoint to manipulate")
+		ep      = pflag.StringP("endpoint", "e", "", "endpoint to manipulate: master, out")
 		verbose = pflag.BoolP("verbose", "v", false, "enable debug log")
 	)
 	pflag.Parse()
@@ -150,6 +170,10 @@ func main() {
 		logger.LogCritical("invalid operation: either 'get' or 'set'")
 		os.Exit(1)
 	}
+	if *ep == "" {
+		logger.LogCritical("no endpoint specified")
+		os.Exit(1)
+	}
 
 	client := netzteilClient{
 		client: http.Client{
@@ -159,7 +183,19 @@ func main() {
 	}
 
 	switch *ep {
-	case "channel":
+	case "devices":
+		devices, err := client.getDeviceList()
+		if err != nil {
+			logger.LogCritical(err)
+			os.Exit(1)
+		}
+		for i, device := range devices {
+			if device == "" {
+				device = "NO DESCRIPTION"
+			}
+			fmt.Printf("%02d: %s\n", i+1, device)
+		}
+	case "out":
 		switch *op {
 		case operationGET:
 			state, err := client.getChannel(*device, *channel)

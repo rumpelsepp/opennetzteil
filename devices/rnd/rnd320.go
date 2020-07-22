@@ -38,7 +38,7 @@ func NewRND320(path string) *RND320 {
 
 func (nt *RND320) Probe() error {
 	cmd := []byte("*IDN?")
-	resp, err := nt.RequestWithTimeout(nt.file, cmd, 200*time.Millisecond)
+	resp, err := nt.RequestWithTimeout(nt.file, cmd, 1000*time.Millisecond)
 	if err != nil {
 		return err
 	}

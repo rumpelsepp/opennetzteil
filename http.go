@@ -225,6 +225,67 @@ func (s *HTTPServer) getVoltage(w http.ResponseWriter, r *http.Request) {
 	helpers.SendJSON(w, voltage)
 }
 
+const (
+	measurementVoltage = iota
+	measurementCurrent
+	measurementBoth
+)
+
+func (s *HTTPServer) continousMeasurement(w http.ResponseWriter, r *http.Request, dev Netzteil, channel, mtype, interval int) {
+	upgrader := websocket.Upgrader{}
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		s.Logger.LogError(err)
+		return
+	}
+	defer conn.Close()
+	go readLoop(conn)
+
+	for {
+		var (
+			val float64
+			err error
+			m   measurement
+		)
+		switch mtype {
+		case measurementVoltage:
+			val, err = dev.GetCurrent(channel)
+			m.Time = time.Now()
+			m.Voltage = val
+		case measurementCurrent:
+			val, err = dev.GetVoltage(channel)
+			m.Time = time.Now()
+			m.Current = val
+		case measurementBoth:
+			val, err = dev.GetVoltage(channel)
+			if err != nil {
+				m := map[string]string{"error": err.Error()}
+				if err := conn.WriteJSON(m); err != nil {
+					return
+				}
+				continue
+			}
+			m.Time = time.Now()
+			m.Voltage = val
+			val, err = dev.GetCurrent(channel)
+			m.Current = val
+		default:
+			panic("BUG: this invalid measurement type")
+		}
+		if err != nil {
+			m := map[string]string{"error": err.Error()}
+			if err := conn.WriteJSON(m); err != nil {
+				return
+			}
+			continue
+		}
+		if err := conn.WriteJSON(m); err != nil {
+			return
+		}
+		time.Sleep(time.Duration(interval) * time.Millisecond)
+	}
+}
+
 func (s *HTTPServer) getVoltageWS(w http.ResponseWriter, r *http.Request) {
 	var (
 		vars = mux.Vars(r)
@@ -243,31 +304,36 @@ func (s *HTTPServer) getVoltageWS(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := r.URL.Query()
-	interval, _ := strconv.ParseUint(query.Get("interval"), 10, 32)
-	upgrader := websocket.Upgrader{}
-	conn, err := upgrader.Upgrade(w, r, nil)
+	interval, err := strconv.ParseUint(query.Get("interval"), 10, 32)
 	if err != nil {
 		s.Logger.LogError(err)
 		return
 	}
-	defer conn.Close()
-	go readLoop(conn)
+	s.continousMeasurement(w, r, dev, channel, measurementVoltage, int(interval))
+}
 
-	for {
-		voltage, err := dev.GetVoltage(channel)
-		if err != nil {
-			m := map[string]string{"error": err.Error()}
-			if err := conn.WriteJSON(m); err != nil {
-				return
-			}
-			continue
-		}
-		m := measurement{Time: time.Now(), Voltage: voltage}
-		if err := conn.WriteJSON(m); err != nil {
-			return
-		}
-		time.Sleep(time.Duration(interval) * time.Millisecond)
+func (s *HTTPServer) getCurrentWS(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	dev, err := s.lookupDevice(vars)
+	if err != nil {
+		helpers.SendJSONError(w, err.Error(), http.StatusBadRequest)
+		return
 	}
+
+	// TODO: Make a helper for this
+	channel, err := strconv.Atoi(vars["channel"])
+	if err != nil {
+		helpers.SendJSONError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	query := r.URL.Query()
+	interval, err := strconv.ParseUint(query.Get("interval"), 10, 32)
+	if err != nil {
+		s.Logger.LogError(err)
+		return
+	}
+	s.continousMeasurement(w, r, dev, channel, measurementCurrent, int(interval))
 }
 
 func (s *HTTPServer) putVoltage(w http.ResponseWriter, r *http.Request) {
@@ -382,7 +448,7 @@ func (s *HTTPServer) CreateHandler() http.Handler {
 	api.HandleFunc("/devices/{id:[0-9]+}/channels", s.getChannels).Methods(http.MethodGet)
 	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/current", s.getCurrent).Methods(http.MethodGet)
 	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/current", s.putCurrent).Methods(http.MethodPut)
-	// api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/current/ws", s.getCurrentWS).Methods(http.MethodGet).Queries("interval", "{interval:[0-9]+}")
+	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/current/ws", s.getCurrentWS).Methods(http.MethodGet).Queries("interval", "{interval:[0-9]+}")
 	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/voltage", s.getVoltage).Methods(http.MethodGet)
 	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/voltage", s.putVoltage).Methods(http.MethodPut)
 	api.HandleFunc("/devices/{id:[0-9]+}/channels/{channel:[0-9]+}/voltage/ws", s.getVoltageWS).Methods(http.MethodGet).Queries("interval", "{interval:[0-9]+}")

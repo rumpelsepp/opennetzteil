@@ -249,11 +249,11 @@ func (s *HTTPServer) continousMeasurement(w http.ResponseWriter, r *http.Request
 		)
 		switch mtype {
 		case measurementVoltage:
-			val, err = dev.GetCurrent(channel)
+			val, err = dev.GetVoltage(channel)
 			m.Time = time.Now()
 			m.Voltage = val
 		case measurementCurrent:
-			val, err = dev.GetVoltage(channel)
+			val, err = dev.GetCurrent(channel)
 			m.Time = time.Now()
 			m.Current = val
 		case measurementBoth:

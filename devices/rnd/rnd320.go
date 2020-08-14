@@ -1,9 +1,11 @@
 package rnd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
+	"syscall"
 	"time"
 
 	"git.sr.ht/~rumpelsepp/opennetzteil"
@@ -12,6 +14,7 @@ import (
 type RND320 struct {
 	opennetzteil.NetzteilBase
 	ident string
+	path  string
 	file  *os.File
 }
 
@@ -33,12 +36,70 @@ func NewRND320(path string) *RND320 {
 
 	return &RND320{
 		file: file,
+		path: path,
 	}
+}
+
+// TODO: Maybe provide this as a global helper?
+func (nt *RND320) request(cmd []byte, timeout time.Duration) ([]byte, error) {
+	var (
+		err  error
+		resp []byte
+	)
+	for i := 0; i < 3; i++ {
+		resp, err = nt.RequestWithTimeout(nt.file, cmd, timeout)
+		if err != nil {
+			// This happens when the power supply itself is
+			// powercycled. In this case the handle must be
+			// renewed.
+			if errors.Is(err, syscall.EIO) {
+				file, err := os.OpenFile(nt.path, os.O_RDWR, 0644)
+				if err != nil {
+					// The filedescriptor could not be refreshed.
+					// This is a fatal error.
+					return nil, err
+				}
+				nt.file = file
+			}
+			// This powersupply is crap, retry 3 times.
+            time.Sleep(500*time.Millisecond)
+			continue
+		}
+		break
+	}
+	return resp, err
+}
+
+// TODO: Maybe provide this as a global helper?
+func (nt *RND320) command(cmd []byte) error {
+	var err error
+	for i := 0; i < 3; i++ {
+		err = nt.SendCommand(nt.file, cmd)
+		if err != nil {
+			// This happens when the power supply itself is
+			// powercycled. In this case the handle must be
+			// renewed.
+			if errors.Is(err, syscall.EIO) {
+				file, err := os.OpenFile(nt.path, os.O_RDWR, 0644)
+				if err != nil {
+					// The filedescriptor could not be refreshed.
+					// This is a fatal error.
+					return err
+				}
+				nt.file = file
+			}
+			// This powersupply is crap, retry 3 times.
+            time.Sleep(500*time.Millisecond)
+			continue
+		}
+		break
+	}
+	return err
 }
 
 func (nt *RND320) Probe() error {
 	cmd := []byte("*IDN?")
-	resp, err := nt.RequestWithTimeout(nt.file, cmd, 1000*time.Millisecond)
+	resp, err := nt.request(cmd, 1000*time.Millisecond)
 	if err != nil {
 		return err
 	}
@@ -48,7 +109,7 @@ func (nt *RND320) Probe() error {
 
 func (nt *RND320) Status() (interface{}, error) {
 	cmd := []byte("STATUS?")
-	resp, err := nt.RequestWithTimeout(nt.file, cmd, 100*time.Millisecond)
+	resp, err := nt.request(cmd, 100*time.Millisecond)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +156,7 @@ func (nt *RND320) SetMaster(enabled bool) error {
 		cmd = []byte("OUT0")
 	}
 
-	if err := nt.SendCommand(nt.file, cmd); err != nil {
+	if err := nt.command(cmd); err != nil {
 		return err
 	}
 	return nil
@@ -115,7 +176,7 @@ func (nt *RND320) GetChannels() (int, error) {
 
 func (nt *RND320) GetCurrent(channel int) (float64, error) {
 	cmd := []byte(fmt.Sprintf("IOUT%d?", channel))
-	resp, err := nt.RequestWithTimeout(nt.file, cmd, 100*time.Millisecond)
+	resp, err := nt.request(cmd, 100*time.Millisecond)
 	if err != nil {
 		return 0, err
 	}
@@ -129,7 +190,7 @@ func (nt *RND320) GetCurrent(channel int) (float64, error) {
 
 func (nt *RND320) SetCurrent(channel int, current float64) error {
 	cmd := []byte(fmt.Sprintf("ISET%d:%.2f", channel, current))
-	err := nt.SendCommand(nt.file, cmd)
+	err := nt.command(cmd)
 	if err != nil {
 		return err
 	}
@@ -138,7 +199,7 @@ func (nt *RND320) SetCurrent(channel int, current float64) error {
 
 func (nt *RND320) GetVoltage(channel int) (float64, error) {
 	cmd := []byte(fmt.Sprintf("VOUT%d?", channel))
-	resp, err := nt.RequestWithTimeout(nt.file, cmd, 100*time.Millisecond)
+	resp, err := nt.request(cmd, 100*time.Millisecond)
 	if err != nil {
 		return 0, err
 	}
@@ -152,7 +213,7 @@ func (nt *RND320) GetVoltage(channel int) (float64, error) {
 
 func (nt *RND320) SetVoltage(channel int, voltage float64) error {
 	cmd := []byte(fmt.Sprintf("VSET%d:%.2f", channel, voltage))
-	err := nt.SendCommand(nt.file, cmd)
+	err := nt.command(cmd)
 	if err != nil {
 		return err
 	}

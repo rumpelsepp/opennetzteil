@@ -62,7 +62,7 @@ func (nt *RND320) request(cmd []byte, timeout time.Duration) ([]byte, error) {
 				nt.file = file
 			}
 			// This powersupply is crap, retry 3 times.
-            time.Sleep(500*time.Millisecond)
+			time.Sleep(500 * time.Millisecond)
 			continue
 		}
 		break
@@ -89,7 +89,7 @@ func (nt *RND320) command(cmd []byte) error {
 				nt.file = file
 			}
 			// This powersupply is crap, retry 3 times.
-            time.Sleep(500*time.Millisecond)
+			time.Sleep(500 * time.Millisecond)
 			continue
 		}
 		break

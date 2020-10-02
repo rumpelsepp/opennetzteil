@@ -48,8 +48,9 @@ All endpoints MUST be prepended the opennetzteil namespace indicator: `/_netztei
 The full path of the `/devices` endpoint looks like the following: `/_netzteil/api/devices`.
 
 Some endpoints include the wording “points to …”.
-This endpoint MAY use an HTTP 308 redirect to the appropriate, pointed endpoint.
-The API using redirects to other endpoints is called reduced API.
+This endpoint and any endpoint matching the path prefix MAY use an HTTP 308 redirect to the appropriate, pointed endpoint.
+For instance, if only one device is registered, `/device` is available and points to `/devices/0`.
+In this case, a request to `/device/channels/5/current` is redirected to `/devices/0/channels/5/current`.
 
 The `|` sign indicates a logical `or`.
 
@@ -94,7 +95,7 @@ GET (REQUIRED) `/devices/{id}/channels/{channel}/current`::
     Returns a float value.
 
 PUT (REQUIRED) `/devices/{id}/channels/{channel}/current`::
-    Sets the maximum current `A`.
+    Sets the maximum current in `A`.
     Accepts a float value.
 
 GET (REQUIRED) `/devices/{id}/channels/{channel}/voltage`::

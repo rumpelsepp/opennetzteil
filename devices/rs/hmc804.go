@@ -25,7 +25,7 @@ func NewHMC804(target string) *HMC804 {
 	}
 }
 
-func (nt *HMC804) send(cmd []byte) error {
+func (nt *HMC804) send(cmd string) error {
 	// This powersupply only supports one TCP connection at a time.
 	// To avoid deadlocks a HTTP/1 pattern is used. One request at
 	// maps to one TCP connection. A HTTP keep-alive equivalent is
@@ -35,17 +35,17 @@ func (nt *HMC804) send(cmd []byte) error {
 		return err
 	}
 	defer conn.Close()
-	return nt.SendCommandLine(conn, cmd)
+	return nt.SendCommandLine(conn, []byte(cmd))
 }
 
-func (nt *HMC804) sendBatched(cmd [][]byte) error {
+func (nt *HMC804) sendBatched(cmd []string) error {
 	conn, err := net.Dial("tcp", nt.target)
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
 	for _, cmd := range cmd {
-		err = nt.SendCommandLine(conn, cmd)
+		err = nt.SendCommandLine(conn, []byte(cmd))
 		if err != nil {
 			return err
 		}
@@ -53,13 +53,13 @@ func (nt *HMC804) sendBatched(cmd [][]byte) error {
 	return nil
 }
 
-func (nt *HMC804) request(cmd []byte) ([]byte, error) {
+func (nt *HMC804) request(cmd string) ([]byte, error) {
 	conn, err := net.Dial("tcp", nt.target)
 	if err != nil {
 		return nil, err
 	}
 	defer conn.Close()
-	return nt.RequestLine(conn, cmd)
+	return nt.RequestLine(conn, []byte(cmd))
 }
 
 func (nt *HMC804) Probe() error {
@@ -76,7 +76,7 @@ func (nt *HMC804) Status() (interface{}, error) {
 }
 
 func (nt *HMC804) GetMaster() (bool, error) {
-	resp, err := nt.request([]byte("OUTP:MAST:STAT?"))
+	resp, err := nt.request("OUTP:MAST:STAT?")
 	if err != nil {
 		return false, err
 	}
@@ -84,11 +84,11 @@ func (nt *HMC804) GetMaster() (bool, error) {
 }
 
 func (nt *HMC804) SetMaster(enabled bool) error {
-	var cmd []byte
+	var cmd string
 	if enabled {
-		cmd = []byte("OUTP:MAST ON")
+		cmd = "OUTP:MAST ON"
 	} else {
-		cmd = []byte("OUTP:MAST OFF")
+		cmd = "OUTP:MAST OFF"
 	}
 	if err := nt.send(cmd); err != nil {
 		return err
@@ -97,7 +97,7 @@ func (nt *HMC804) SetMaster(enabled bool) error {
 }
 
 func (nt *HMC804) GetIdent() (string, error) {
-	cmd := []byte("*IDN?")
+	cmd := "*IDN?"
 	resp, err := nt.request(cmd)
 	if err != nil {
 		return "", err
@@ -114,11 +114,11 @@ func (nt *HMC804) GetChannels() (int, error) {
 }
 
 func (nt *HMC804) GetCurrent(channel int) (float64, error) {
-	cmd := []byte(fmt.Sprintf("INST OUT%d", channel))
+	cmd := fmt.Sprintf("INST OUT%d", channel)
 	if err := nt.send(cmd); err != nil {
 		return 0, err
 	}
-	resp, err := nt.request([]byte("CURR?"))
+	resp, err := nt.request("CURR?")
 	if err != nil {
 		return 0, err
 	}
@@ -126,10 +126,10 @@ func (nt *HMC804) GetCurrent(channel int) (float64, error) {
 }
 
 func (nt *HMC804) SetCurrent(channel int, current float64) error {
-	var cmds [][]byte
-	cmd := []byte(fmt.Sprintf("INST OUT%d", channel))
+	var cmds []string
+	cmd := fmt.Sprintf("INST OUT%d", channel)
 	cmds = append(cmds, cmd)
-	cmd = []byte(fmt.Sprintf("CURR %.3f", current))
+	cmd = fmt.Sprintf("CURR %.3f", current)
 	cmds = append(cmds, cmd)
 	if err := nt.sendBatched(cmds); err != nil {
 		return err
@@ -138,11 +138,11 @@ func (nt *HMC804) SetCurrent(channel int, current float64) error {
 }
 
 func (nt *HMC804) GetVoltage(channel int) (float64, error) {
-	cmd := []byte(fmt.Sprintf("INST OUT%d", channel))
+	cmd := fmt.Sprintf("INST OUT%d", channel)
 	if err := nt.send(cmd); err != nil {
 		return 0, err
 	}
-	resp, err := nt.request([]byte("VOLT?"))
+	resp, err := nt.request("VOLT?")
 	if err != nil {
 		return 0, err
 	}
@@ -150,10 +150,10 @@ func (nt *HMC804) GetVoltage(channel int) (float64, error) {
 }
 
 func (nt *HMC804) SetVoltage(channel int, voltage float64) error {
-	var cmds [][]byte
-	cmd := []byte(fmt.Sprintf("INST OUT%d", channel))
+	var cmds []string
+	cmd := fmt.Sprintf("INST OUT%d", channel)
 	cmds = append(cmds, cmd)
-	cmd = []byte(fmt.Sprintf("VOLT %.3f", voltage))
+	cmd = fmt.Sprintf("VOLT %.3f", voltage)
 	cmds = append(cmds, cmd)
 	if err := nt.sendBatched(cmds); err != nil {
 		return err
@@ -162,11 +162,11 @@ func (nt *HMC804) SetVoltage(channel int, voltage float64) error {
 }
 
 func (nt *HMC804) GetOut(channel int) (bool, error) {
-	cmd := []byte(fmt.Sprintf("INST OUT%d", channel))
+	cmd := fmt.Sprintf("INST OUT%d", channel)
 	if err := nt.send(cmd); err != nil {
 		return false, err
 	}
-	resp, err := nt.request([]byte("OUTP:STAT?"))
+	resp, err := nt.request("OUTP:STAT?")
 	if err != nil {
 		return false, err
 	}
@@ -174,16 +174,16 @@ func (nt *HMC804) GetOut(channel int) (bool, error) {
 }
 
 func (nt *HMC804) SetOut(channel int, enabled bool) error {
-	var cmds [][]byte
-	cmd := []byte(fmt.Sprintf("INST OUT%d", channel))
+	var cmds []string
+	cmd := fmt.Sprintf("INST OUT%d", channel)
 	if err := nt.send(cmd); err != nil {
 		return err
 	}
 	cmds = append(cmds, cmd)
 	if enabled {
-		cmd = []byte("OUTP:CHAN ON")
+		cmd = "OUTP:CHAN ON"
 	} else {
-		cmd = []byte("OUTP:CHAN OFF")
+		cmd = "OUTP:CHAN OFF"
 	}
 	cmds = append(cmds, cmd)
 	if err := nt.sendBatched(cmds); err != nil {

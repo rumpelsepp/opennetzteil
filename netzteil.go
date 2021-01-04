@@ -54,45 +54,6 @@ func (nt *NetzteilBase) SendCommandLine(handle io.Writer, cmd []byte) error {
 	return nt.SendCommand(handle, append(cmd, '\n'))
 }
 
-func (nt *NetzteilBase) RequestWithTimeout(handle io.ReadWriter, cmd []byte, timeout time.Duration) ([]byte, error) {
-	nt.mutex.Lock()
-	defer nt.mutex.Unlock()
-	_, err := io.Copy(handle, bytes.NewReader(cmd))
-	if err != nil {
-		return nil, err
-	}
-	var (
-		n    = 0
-		read = 0
-		buf  = make([]byte, 4*1024)
-	)
-	for {
-		dl := time.Now().Add(timeout)
-		switch r := handle.(type) {
-		case *os.File:
-			err = r.SetReadDeadline(dl)
-			if err != nil {
-				return nil, err
-			}
-		case net.Conn:
-			err = r.SetReadDeadline(dl)
-			if err != nil {
-				return nil, err
-			}
-		default:
-			return nil, fmt.Errorf("unsupported reader: %t", r)
-		}
-		n, err = handle.Read(buf[read:])
-		read += n
-		if err != nil {
-			if os.IsTimeout(err) {
-				return buf[:read], nil
-			}
-			return nil, err
-		}
-	}
-}
-
 func (nt *NetzteilBase) Request(handle io.ReadWriter, cmd []byte) ([]byte, error) {
 	nt.mutex.Lock()
 	defer nt.mutex.Unlock()
@@ -123,4 +84,43 @@ func (nt *NetzteilBase) RequestLine(handle io.ReadWriter, cmd []byte) ([]byte, e
 		return nil, err
 	}
 	return line, nil
+}
+
+func (nt *NetzteilBase) RequestWithTimeout(handle io.ReadWriter, cmd []byte, timeout time.Duration) ([]byte, error) {
+	nt.mutex.Lock()
+	defer nt.mutex.Unlock()
+	_, err := io.Copy(handle, bytes.NewReader(cmd))
+	if err != nil {
+		return nil, err
+	}
+	var (
+		outBuf []byte
+		n      = 0
+		buf    = make([]byte, 32*1024)
+	)
+	for {
+		dl := time.Now().Add(timeout)
+		switch r := handle.(type) {
+		case *os.File:
+			err = r.SetReadDeadline(dl)
+			if err != nil {
+				return nil, err
+			}
+		case net.Conn:
+			err = r.SetReadDeadline(dl)
+			if err != nil {
+				return nil, err
+			}
+		default:
+			return nil, fmt.Errorf("unsupported reader: %t", r)
+		}
+		n, err = handle.Read(buf)
+		outBuf = append(outBuf, buf[:n]...)
+		if err != nil {
+			if os.IsTimeout(err) {
+				return outBuf, nil
+			}
+			return nil, err
+		}
+	}
 }

@@ -356,7 +356,25 @@ func (s *HTTPServer) putVoltage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *HTTPServer) getOut(w http.ResponseWriter, r *http.Request) {
-	helpers.SendJSONError(w, "not implemented", http.StatusInternalServerError)
+	var (
+		on   bool
+		err  error
+		vars = mux.Vars(r)
+	)
+	dev, channel, err := s.lookupDevAndParseChannel(w, vars)
+	if err != nil {
+		return
+	}
+	if channel == 0 {
+		on, err = dev.GetMaster()
+	} else {
+		on, err = dev.GetOut(channel)
+	}
+	if err != nil {
+		helpers.SendJSONError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	helpers.SendJSON(w, on)
 }
 
 func (s *HTTPServer) putOut(w http.ResponseWriter, r *http.Request) {

@@ -1,19 +1,27 @@
 image: archlinux
 packages:
-  - asciidoctor
-  - rsync
-secrets:
-  - 0d06436c-bc8f-4f65-af13-cad62d4f1127
+  - go
+  - git
+  - python-pytest
+  - python-requests
 
 tasks:
   - setup: |
-      echo "batuu.sevenbyte.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPNMmSHb2ALfwP1oC2oUlVkUTOMR/HooZUbH4YDMQS/k" > $HOME/.ssh/known_hosts
+      git clone https://git.sr.ht/~rumpelsepp/pyopennetzteil
 
-  - build: |
-      cd opennetzteil/man
-      make html
+      cd opennetzteil
+      make netzteild
+      config="$HOME/.config/netzteil/config.toml"
+      mkdir -p "$(dirname $config)"
+      echo "[http]" > "$config"
+      echo "bind = \":8000\"" >> "$config"
+      echo "[[netzteile]]" >> "$config"
+      echo "model = \"dummy\"" >> "$config"
 
-  - deploy: |
-      cd opennetzteil/man
-      rsync -e "ssh -o VerifyHostKeyDNS=yes -o StrictHostKeyChecking=accept-new" -rP *.html deploy@batuu.sevenbyte.org:man.rumpelsepp.org
-
+  - test: |
+      cd opennetzteil
+      ./netzteild 2> "$HOME/requests.log" &
+      cd ..
+      cd pyopennetzteil
+      make tests
+      cat "$HOME/requests.log"

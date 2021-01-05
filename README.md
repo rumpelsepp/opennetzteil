@@ -23,11 +23,11 @@ $ make
 ```
 $ cat $HOME/.config/netzteil/config.toml
 [http]
-listen = :8000
+bind = ":8000"
 
 [[netzteile]]
-handle = file:///dev/ttyACM0
-model = rnd320
+handle = "file:///dev/ttyACM0"
+model = "rnd320"
 ```
 
 Run it:

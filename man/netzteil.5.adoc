@@ -16,11 +16,11 @@ This file uses the TOML file format which is specified here: https://github.com/
 
 ----
 [http]
-listen = :8000
+bind = ":8000"
 
 [[netzteile]]
-handle = file:///dev/ttyACM0
-model = rnd320
+handle = "file:///dev/ttyACM0"
+model = "rnd320"
 ----
 
 == Authors

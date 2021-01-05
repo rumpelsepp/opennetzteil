@@ -58,9 +58,19 @@ func (s *HTTPServer) lookupDevAndParseChannel(w http.ResponseWriter, vars map[st
 	if err != nil {
 		return nil, 0, err
 	}
+	nChannels, err := dev.GetChannels()
+	if err != nil {
+		helpers.SendJSONError(w, err.Error(), http.StatusInternalServerError)
+		return nil, 0, err
+	}
 	channel, err := strconv.Atoi(vars["channel"])
 	// TODO: more different error types
 	if err != nil {
+		helpers.SendJSONError(w, err.Error(), http.StatusNotFound)
+		return nil, 0, err
+	}
+	if channel > nChannels {
+		err := fmt.Errorf("no such channel '%d'; device has '%d' channels", channel, nChannels)
 		helpers.SendJSONError(w, err.Error(), http.StatusNotFound)
 		return nil, 0, err
 	}

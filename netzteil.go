@@ -124,3 +124,45 @@ func (nt *NetzteilBase) RequestWithTimeout(handle io.ReadWriter, cmd []byte, tim
 		}
 	}
 }
+
+// TCPSend creates a connection, sends a commend and closes the connection.
+// Useful if the relevant powersupply only supports one TCP connection at a
+// time. To avoid deadlocks a HTTP/1 pattern is used. One request maps to
+// one TCP connection. A HTTP keep-alive equivalent is avail with
+// TCPSendBatched().
+func (nt *NetzteilBase) TCPSend(target, cmd string) error {
+	conn, err := net.Dial("tcp", target)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	return nt.SendCommandLine(conn, []byte(cmd))
+}
+
+// TCPSendBatched creates a connection, sends multiple commands and
+// closes the connection.
+func (nt *NetzteilBase) TCPSendBatched(target string, cmd []string) error {
+	conn, err := net.Dial("tcp", target)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	for _, cmd := range cmd {
+		err = nt.SendCommandLine(conn, []byte(cmd))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// TCPRequest creates a connection, sends the command, reads
+// back the response, and closes the connection.
+func (nt *NetzteilBase) TCPRequest(target, cmd string) ([]byte, error) {
+	conn, err := net.Dial("tcp", target)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	return nt.RequestLine(conn, []byte(cmd))
+}

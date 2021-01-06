@@ -2,7 +2,6 @@ package rs
 
 import (
 	"fmt"
-	"net"
 	"strconv"
 
 	"git.sr.ht/~rumpelsepp/opennetzteil"
@@ -25,43 +24,6 @@ func NewHMC804(target string) *HMC804 {
 	}
 }
 
-func (nt *HMC804) send(cmd string) error {
-	// This powersupply only supports one TCP connection at a time.
-	// To avoid deadlocks a HTTP/1 pattern is used. One request at
-	// maps to one TCP connection. A HTTP keep-alive equivalent is
-	// avail with sendBatched().
-	conn, err := net.Dial("tcp", nt.target)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-	return nt.SendCommandLine(conn, []byte(cmd))
-}
-
-func (nt *HMC804) sendBatched(cmd []string) error {
-	conn, err := net.Dial("tcp", nt.target)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-	for _, cmd := range cmd {
-		err = nt.SendCommandLine(conn, []byte(cmd))
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (nt *HMC804) request(cmd string) ([]byte, error) {
-	conn, err := net.Dial("tcp", nt.target)
-	if err != nil {
-		return nil, err
-	}
-	defer conn.Close()
-	return nt.RequestLine(conn, []byte(cmd))
-}
-
 func (nt *HMC804) Probe() error {
 	ident, err := nt.GetIdent()
 	if err != nil {
@@ -76,7 +38,7 @@ func (nt *HMC804) Status() (interface{}, error) {
 }
 
 func (nt *HMC804) GetMaster() (bool, error) {
-	resp, err := nt.request("OUTP:MAST:STAT?")
+	resp, err := nt.TCPRequest(nt.target, "OUTP:MAST:STAT?")
 	if err != nil {
 		return false, err
 	}
@@ -90,7 +52,7 @@ func (nt *HMC804) SetMaster(enabled bool) error {
 	} else {
 		cmd = "OUTP:MAST OFF"
 	}
-	if err := nt.send(cmd); err != nil {
+	if err := nt.TCPSend(nt.target, cmd); err != nil {
 		return err
 	}
 	return nil
@@ -98,7 +60,7 @@ func (nt *HMC804) SetMaster(enabled bool) error {
 
 func (nt *HMC804) GetIdent() (string, error) {
 	cmd := "*IDN?"
-	resp, err := nt.request(cmd)
+	resp, err := nt.TCPRequest(nt.target, cmd)
 	if err != nil {
 		return "", err
 	}
@@ -115,10 +77,10 @@ func (nt *HMC804) GetChannels() (int, error) {
 
 func (nt *HMC804) GetCurrent(channel int) (float64, error) {
 	cmd := fmt.Sprintf("INST OUT%d", channel)
-	if err := nt.send(cmd); err != nil {
+	if err := nt.TCPSend(nt.target, cmd); err != nil {
 		return 0, err
 	}
-	resp, err := nt.request("CURR?")
+	resp, err := nt.TCPRequest(nt.target, "CURR?")
 	if err != nil {
 		return 0, err
 	}
@@ -131,7 +93,7 @@ func (nt *HMC804) SetCurrent(channel int, current float64) error {
 	cmds = append(cmds, cmd)
 	cmd = fmt.Sprintf("CURR %.3f", current)
 	cmds = append(cmds, cmd)
-	if err := nt.sendBatched(cmds); err != nil {
+	if err := nt.TCPSendBatched(nt.target, cmds); err != nil {
 		return err
 	}
 	return nil
@@ -139,10 +101,10 @@ func (nt *HMC804) SetCurrent(channel int, current float64) error {
 
 func (nt *HMC804) GetVoltage(channel int) (float64, error) {
 	cmd := fmt.Sprintf("INST OUT%d", channel)
-	if err := nt.send(cmd); err != nil {
+	if err := nt.TCPSend(nt.target, cmd); err != nil {
 		return 0, err
 	}
-	resp, err := nt.request("VOLT?")
+	resp, err := nt.TCPRequest(nt.target, "VOLT?")
 	if err != nil {
 		return 0, err
 	}
@@ -155,7 +117,7 @@ func (nt *HMC804) SetVoltage(channel int, voltage float64) error {
 	cmds = append(cmds, cmd)
 	cmd = fmt.Sprintf("VOLT %.3f", voltage)
 	cmds = append(cmds, cmd)
-	if err := nt.sendBatched(cmds); err != nil {
+	if err := nt.TCPSendBatched(nt.target, cmds); err != nil {
 		return err
 	}
 	return nil
@@ -163,10 +125,10 @@ func (nt *HMC804) SetVoltage(channel int, voltage float64) error {
 
 func (nt *HMC804) GetOut(channel int) (bool, error) {
 	cmd := fmt.Sprintf("INST OUT%d", channel)
-	if err := nt.send(cmd); err != nil {
+	if err := nt.TCPSend(nt.target, cmd); err != nil {
 		return false, err
 	}
-	resp, err := nt.request("OUTP:STAT?")
+	resp, err := nt.TCPRequest(nt.target, "OUTP:STAT?")
 	if err != nil {
 		return false, err
 	}
@@ -176,7 +138,7 @@ func (nt *HMC804) GetOut(channel int) (bool, error) {
 func (nt *HMC804) SetOut(channel int, enabled bool) error {
 	var cmds []string
 	cmd := fmt.Sprintf("INST OUT%d", channel)
-	if err := nt.send(cmd); err != nil {
+	if err := nt.TCPSend(nt.target, cmd); err != nil {
 		return err
 	}
 	cmds = append(cmds, cmd)
@@ -186,7 +148,7 @@ func (nt *HMC804) SetOut(channel int, enabled bool) error {
 		cmd = "OUTP:CHAN OFF"
 	}
 	cmds = append(cmds, cmd)
-	if err := nt.sendBatched(cmds); err != nil {
+	if err := nt.TCPSendBatched(nt.target, cmds); err != nil {
 		return err
 	}
 	return nil

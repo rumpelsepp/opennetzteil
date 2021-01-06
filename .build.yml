@@ -4,9 +4,15 @@ packages:
   - git
   - python-pytest
   - python-requests
+  - asciidoctor
+  - rsync
+secrets:
+  - 0d06436c-bc8f-4f65-af13-cad62d4f1127
 
 tasks:
   - setup: |
+      echo "batuu.sevenbyte.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPNMmSHb2ALfwP1oC2oUlVkUTOMR/HooZUbH4YDMQS/k" > $HOME/.ssh/known_hosts
+
       git clone https://git.sr.ht/~rumpelsepp/pyopennetzteil
 
       cd opennetzteil
@@ -25,3 +31,11 @@ tasks:
       cd pyopennetzteil
       make tests
       cat "$HOME/requests.log"
+
+  - build-man: |
+      cd opennetzteil/man
+      make html
+
+  - deploy: |
+      cd opennetzteil/man
+      rsync -e "ssh -o VerifyHostKeyDNS=yes -o StrictHostKeyChecking=accept-new" -rP *.html deploy@batuu.sevenbyte.org:man.rumpelsepp.org

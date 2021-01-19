@@ -110,13 +110,11 @@ GET (OPTIONAL) `/devices/{id}/channels/{channel}/current/ws?interval={ms}`::
 GET (OPTIONAL) `/devices/{id}/channels/{channel}/measurements/ws?interval={ms}`::
     TODO
 
-GET (REQUIRED) `/devices/{id}/channels/{channel}/out`::
+GET (REQUIRED) `/devices/{id}/channels/{channel}/out` -> bool::
     Query the status of the channel `channel` of device with the id `id`.
-    Returns a boolean value.
 
-PUT (REQUIRED) `/devices/{id}/channels/{channel}/out`::
+PUT (REQUIRED) `/devices/{id}/channels/{channel}/out` (bool)::
     Sets the status of the channel `channel` of device with the id `id`.
-    Accepts a boolean value.
 
 GET (REQUIRED) `/devices/{id}/channels/{channel}/ocp` -> bool::
     Returns the state of the OverCurrentProtection.

@@ -53,22 +53,22 @@ For instance, if only one device is registered, `/device` is available and point
 In this case, a request to `/device/channels/5/current` is redirected to `/devices/0/channels/5/current`.
 
 The `|` sign indicates a logical `or`.
+Return values are indicated with an arrow `->`, parameters via e.g. PUT are in brackets, e.g. `(bool)`.
 
 GET|PUT (OPTIONAL) `/device`::
     If **only one** device is served, this endpoint points to `/devices/0/…`.
 
-GET (REQUIRED) `/devices`::
+GET (REQUIRED) `/devices` -> string::
     Query the available power supplies.
 
-GET (REQUIRED) `/devices/{id}/out`::
+GET (REQUIRED) `/devices/{id}/out` -> bool::
     Query the status of the master output.
-    Returns a boolean JSON body: `true`, or `false`.
 
-PUT (REQUIRED) `/devices/{id}/out`::
+PUT (REQUIRED) `/devices/{id}/out` (bool)::
     Set the status of the master output.
     Accepts a boolean JSON body: `true`, or `false`.
 
-GET (REQUIRED) `/devices/{id}/ident`::
+GET (REQUIRED) `/devices/{id}/ident` -> string::
     Returns the device identity.
     Typically, this is the model name, e.g. `RND 320-KD3005P V2.0`.
 
@@ -79,32 +79,27 @@ GET (OPTIONAL) `/devices/{id}/raw/ws`::
 PUT (OPTIONAL) `/devices/{id}/beep`::
     TODO
 
-GET (OPTIONAL) `/devices/{id}/status`::
+GET (OPTIONAL) `/devices/{id}/status` -> dict::
     Query status information.
     The returned data is device specific, it is RECOMMENDED to use a JSON dict with descriptive keys.
 
 GET|PUT (OPTIONAL) `/devices/{id}/channel`::
     If the device has *only one* channel, this endpoint points to `/devices/{id}/channels/0`.
 
-GET (REQUIRED) `/devices/{id}/channels`::
+GET (REQUIRED) `/devices/{id}/channels` -> int::
     Returns the number of available channels.
-    Returns an integer value.
 
-GET (REQUIRED) `/devices/{id}/channels/{channel}/current`::
+GET (REQUIRED) `/devices/{id}/channels/{channel}/current` -> float::
     Returns the present current in `A`.
-    Returns a float value.
 
-PUT (REQUIRED) `/devices/{id}/channels/{channel}/current`::
+PUT (REQUIRED) `/devices/{id}/channels/{channel}/current` (float)::
     Sets the maximum current in `A`.
-    Accepts a float value.
 
-GET (REQUIRED) `/devices/{id}/channels/{channel}/voltage`::
+GET (REQUIRED) `/devices/{id}/channels/{channel}/voltage` -> float::
     Returns the present voltage in `V`.
-    Returns a float value.
 
-PUT (REQUIRED) `/devices/{id}/channels/{channel}/voltage`::
+PUT (REQUIRED) `/devices/{id}/channels/{channel}/voltage` (float)::
     Sets the maximum voltage `V`.
-    Accepts a float value.
 
 GET (OPTIONAL) `/devices/{id}/channels/{channel}/voltage/ws?interval={ms}`::
     TODO
@@ -123,22 +118,22 @@ PUT (REQUIRED) `/devices/{id}/channels/{channel}/out`::
     Sets the status of the channel `channel` of device with the id `id`.
     Accepts a boolean value.
 
-GET (REQUIRED) `/devices/{id}/channels/{channel}/ocp`::
-    TODO
+GET (REQUIRED) `/devices/{id}/channels/{channel}/ocp` -> bool::
+    Returns the state of the OverCurrentProtection.
 
-PUT (REQUIRED) `/devices/{id}/channels/{channel}/ocp`::
-    TODO
+PUT (REQUIRED) `/devices/{id}/channels/{channel}/ocp` (bool)::
+    Sets the state of the OverCurrentProtection.
 
-GET (REQUIRED) `/devices/{id}/channels/{channel}/ovp`::
-    TODO
+GET (REQUIRED) `/devices/{id}/channels/{channel}/ovp` -> bool::
+    Returns the state of the OverVoltageProtection.
 
-PUT (REQUIRED) `/devices/{id}/channels/{channel}/ovp`::
-    TODO
+PUT (REQUIRED) `/devices/{id}/channels/{channel}/ovp` (bool)::
+    Sets the state of the OverVoltageProtection.
 
-== Authors
+== Maintainer
 
-Maintained by Stefan Tatschner <stefan@rumpelsepp.org>.
-The Git repository is hosted here: https://git.sr.ht/~rumpelsepp/opennetzteil
+* Maintained by Stefan Tatschner <stefan@rumpelsepp.org>.
+* The Git repository is hosted here: https://git.sr.ht/~rumpelsepp/opennetzteil
 
 == License
 

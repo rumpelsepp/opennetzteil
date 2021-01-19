@@ -18,8 +18,9 @@ import (
 )
 
 const (
-	operationSET = "set"
-	operationGET = "get"
+	operationSET  = "set"
+	operationGET  = "get"
+	operationCONT = "cont"
 )
 
 var logger = penlog.NewLogger("cli", os.Stderr)
@@ -245,7 +246,7 @@ func main() {
 	var (
 		device  = pflag.UintP("device", "d", 1, "device index")
 		channel = pflag.UintP("channel", "c", 1, "channel index")
-		op      = pflag.StringP("operation", "o", "get", "operation, either 'get' or 'set'")
+		op      = pflag.StringP("operation", "o", "get", "operation, either 'get', 'set', or 'cont'")
 		opArg   = pflag.StringP("arg", "a", "", "argument for the operation")
 		ep      = pflag.StringP("endpoint", "e", "", "endpoint to manipulate: master, out")
 		verbose = pflag.BoolP("verbose", "v", false, "enable debug log")
@@ -262,9 +263,13 @@ func main() {
 		logger.LogCritical(err)
 		os.Exit(1)
 	}
+	if urlParsed.Scheme != "http" && urlParsed.Scheme != "https" {
+		logger.LogCritical("No protocol scheme provided! Use http:// or https://.")
+		os.Exit(1)
+	}
 	*op = strings.ToLower(*op)
-	if *op != operationGET && *op != operationSET {
-		logger.LogCritical("invalid operation: either 'get' or 'set'")
+	if *op != operationGET && *op != operationSET && *op != operationCONT {
+		logger.LogCritical("invalid operation: either 'get', 'set', or cont")
 		os.Exit(1)
 	}
 	if *ep == "" {
@@ -311,10 +316,12 @@ func main() {
 				logger.LogCritical(err)
 				os.Exit(1)
 			}
+		case operationCONT:
 		}
 	case "current":
 		switch *op {
 		case operationGET:
+			var current float64
 			current, err := client.getCurrent(*device, *channel)
 			if err != nil {
 				logger.LogCritical(err)

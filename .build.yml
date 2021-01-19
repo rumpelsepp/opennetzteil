@@ -3,7 +3,8 @@ packages:
   - go
   - git
   - python-pytest
-  - python-requests
+  - python-pytest-asyncio
+  - python-aiohttp
   - asciidoctor
   - rsync
 secrets:

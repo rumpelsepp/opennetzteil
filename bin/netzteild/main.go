@@ -77,7 +77,10 @@ func initNetzteile(conf *config) ([]opennetzteil.Netzteil, error) {
 			if handle.Scheme != "file" {
 				return nil, fmt.Errorf("invalid handle for: %s", nc.Model)
 			}
-			nt = rnd.NewRND320(handle.Path)
+			nt, err = rnd.NewRND320(handle.Path)
+			if err != nil {
+				return nil, err
+			}
 		case "hmc804":
 			if handle.Scheme != "tcp" {
 				return nil, fmt.Errorf("invalid handle for: %s", nc.Model)

@@ -28,15 +28,15 @@ type Status struct {
 	Output      bool
 }
 
-func NewRND320(path string) *RND320 {
+func NewRND320(path string) (*RND320, error) {
 	file, err := os.OpenFile(path, os.O_RDWR, 0644)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	return &RND320{
 		file: file,
 		path: path,
-	}
+	}, nil
 }
 
 func (nt *RND320) reopenHandeIfNeeded(err error) error {

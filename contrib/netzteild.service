@@ -1,0 +1,13 @@
+[Unit]
+Description=OpenNetzteil Demon
+Documentation=man:netzteild
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+ExecStart=/usr/bin/netzteild -c /etc/netzteil/config.toml -v
+User=daemon
+Group=dialout
+
+[Install]
+WantedBy=multi-user.target

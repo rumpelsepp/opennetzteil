@@ -7,10 +7,12 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"git.sr.ht/~rumpelsepp/opennetzteil"
 	"git.sr.ht/~rumpelsepp/opennetzteil/devices/dummy"
+	"git.sr.ht/~rumpelsepp/opennetzteil/devices/ea"
 	"git.sr.ht/~rumpelsepp/opennetzteil/devices/rnd"
 	"git.sr.ht/~rumpelsepp/opennetzteil/devices/rs"
 	"git.sr.ht/~sircmpwn/getopt"
@@ -18,7 +20,14 @@ import (
 	"github.com/pelletier/go-toml"
 )
 
-var logger = penlog.NewLogger("cli", os.Stderr)
+type requestLogger struct {
+	penlog.Logger
+}
+
+func (l *requestLogger) Write(p []byte) (int, error) {
+	l.Logger.LogDebug(strings.TrimSpace(string(p)))
+	return 0, nil
+}
 
 type runtimeOptions struct {
 	config  string
@@ -92,6 +101,11 @@ func initNetzteile(conf *config) ([]opennetzteil.Netzteil, error) {
 				return nil, fmt.Errorf("invalid handle for: %s", nc.Model)
 			}
 			nt = rs.NewHMC804(handle.Host, nc.Name)
+		case "ea8000":
+			if handle.Scheme != "tcp" {
+				return nil, fmt.Errorf("invalid handle for: %s", nc.Model)
+			}
+			nt = ea.NewEA8000(handle.Host, nc.Name)
 		default:
 			return nil, fmt.Errorf("unsupported power supply")
 		}
@@ -112,7 +126,7 @@ func main() {
 
 	err := getopt.Parse()
 	if err != nil {
-		logger.LogCritical(err)
+		fmt.Println(err)
 		os.Exit(1)
 	}
 
@@ -121,25 +135,31 @@ func main() {
 		os.Exit(0)
 	}
 
+	var (
+		httpLogger = penlog.NewLogger("http", os.Stderr)
+		reqLogger  = penlog.NewLogger("http-req", os.Stderr)
+	)
+
 	if opts.verbose {
-		logger.SetLogLevel(penlog.PrioDebug)
+		reqLogger.SetLogLevel(penlog.PrioDebug)
+		reqLogger.SetLogLevel(penlog.PrioDebug)
 	}
 
 	config, err := loadConfig(opts.config)
 	if err != nil {
-		logger.LogCritical(err)
+		fmt.Println(err)
 		os.Exit(1)
 	}
 
 	netzteile, err := initNetzteile(config)
 	if err != nil {
-		logger.LogCritical(err)
+		fmt.Println(err)
 		os.Exit(1)
 	}
 
 	apiSRV := opennetzteil.HTTPServer{
-		ReqLog:  os.Stderr,
-		Logger:  penlog.NewLogger("http", os.Stderr),
+		ReqLog:  reqLogger,
+		Logger:  httpLogger,
 		Devices: netzteile,
 	}
 	apiSRV.Logger.SetLogLevel(penlog.PrioDebug)
@@ -152,7 +172,7 @@ func main() {
 	}
 
 	if err := srv.ListenAndServe(); err != nil {
-		logger.LogCritical(err)
+		fmt.Println(err)
 		os.Exit(1)
 	}
 }

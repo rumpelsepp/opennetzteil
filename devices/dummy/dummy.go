@@ -1,6 +1,10 @@
 package dummy
 
-type DummyDevice struct{}
+import "git.sr.ht/~rumpelsepp/opennetzteil"
+
+type DummyDevice struct {
+	opennetzteil.NetzteilBase
+}
 
 func (d *DummyDevice) Probe() error {
 	return nil
@@ -16,10 +20,6 @@ func (d *DummyDevice) GetMaster() (bool, error) {
 
 func (d *DummyDevice) SetMaster(enabled bool) error {
 	return nil
-}
-
-func (d *DummyDevice) GetIdent() (string, error) {
-	return "dummy-device", nil
 }
 
 func (d *DummyDevice) SetBeep(enabled bool) error {

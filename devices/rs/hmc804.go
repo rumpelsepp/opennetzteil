@@ -9,7 +9,6 @@ import (
 
 type HMC804 struct {
 	opennetzteil.NetzteilBase
-	ident  string
 	target string
 }
 
@@ -18,18 +17,27 @@ type Status struct {
 	Output      bool
 }
 
-func NewHMC804(target string) *HMC804 {
+func NewHMC804(target, name string) *HMC804 {
 	return &HMC804{
 		target: target,
 	}
 }
 
+func (nt *HMC804) getIdent() (string, error) {
+	cmd := "*IDN?"
+	resp, err := nt.TCPRequest(nt.target, cmd)
+	if err != nil {
+		return "", err
+	}
+	return string(resp), nil
+}
+
 func (nt *HMC804) Probe() error {
-	ident, err := nt.GetIdent()
+	ident, err := nt.getIdent()
 	if err != nil {
 		return err
 	}
-	nt.ident = ident
+	nt.NetzteilBase.Ident = ident
 	return nil
 }
 
@@ -56,15 +64,6 @@ func (nt *HMC804) SetMaster(enabled bool) error {
 		return err
 	}
 	return nil
-}
-
-func (nt *HMC804) GetIdent() (string, error) {
-	cmd := "*IDN?"
-	resp, err := nt.TCPRequest(nt.target, cmd)
-	if err != nil {
-		return "", err
-	}
-	return string(resp), nil
 }
 
 func (nt *HMC804) SetBeep(enabled bool) error {

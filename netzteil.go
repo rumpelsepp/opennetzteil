@@ -38,6 +38,15 @@ type Netzteil interface {
 
 type NetzteilBase struct {
 	mutex sync.Mutex
+	Name  string
+	Ident string
+}
+
+func (nt *NetzteilBase) GetIdent() (string, error) {
+	if nt.Name != "" {
+		return fmt.Sprintf("%s (%s)", nt.Ident, nt.Name), nil
+	}
+	return nt.Ident, nil
 }
 
 func (nt *NetzteilBase) SendCommand(handle io.Writer, cmd []byte) error {

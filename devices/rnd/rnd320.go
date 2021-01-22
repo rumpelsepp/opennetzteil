@@ -13,9 +13,8 @@ import (
 
 type RND320 struct {
 	opennetzteil.NetzteilBase
-	ident string
-	path  string
-	file  *os.File
+	path string
+	file *os.File
 }
 
 const (
@@ -28,14 +27,15 @@ type Status struct {
 	Output      bool
 }
 
-func NewRND320(path string) (*RND320, error) {
+func NewRND320(path, name string) (*RND320, error) {
 	file, err := os.OpenFile(path, os.O_RDWR, 0644)
 	if err != nil {
 		return nil, err
 	}
 	return &RND320{
-		file: file,
-		path: path,
+		NetzteilBase: opennetzteil.NetzteilBase{Name: name},
+		file:         file,
+		path:         path,
 	}, nil
 }
 
@@ -97,7 +97,7 @@ func (nt *RND320) Probe() error {
 	if err != nil {
 		return err
 	}
-	nt.ident = string(resp)
+	nt.NetzteilBase.Ident = string(resp)
 	return nil
 }
 
@@ -154,10 +154,6 @@ func (nt *RND320) SetMaster(enabled bool) error {
 		return err
 	}
 	return nil
-}
-
-func (nt *RND320) GetIdent() (string, error) {
-	return nt.ident, nil
 }
 
 func (nt *RND320) SetBeep(enabled bool) error {

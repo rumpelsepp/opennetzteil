@@ -33,6 +33,7 @@ type HTTPConfig struct {
 type NetzteilConfig struct {
 	Handle string
 	Model  string
+	Name   string
 }
 
 type config struct {
@@ -72,12 +73,17 @@ func initNetzteile(conf *config) ([]opennetzteil.Netzteil, error) {
 
 		switch nc.Model {
 		case "dummy":
-			nt = &dummy.DummyDevice{}
+			nt = &dummy.DummyDevice{
+				NetzteilBase: opennetzteil.NetzteilBase{
+					Ident: "dummy-device",
+					Name:  nc.Name,
+				},
+			}
 		case "rnd320":
 			if handle.Scheme != "file" {
 				return nil, fmt.Errorf("invalid handle for: %s", nc.Model)
 			}
-			nt, err = rnd.NewRND320(handle.Path)
+			nt, err = rnd.NewRND320(handle.Path, nc.Name)
 			if err != nil {
 				return nil, err
 			}
@@ -85,7 +91,7 @@ func initNetzteile(conf *config) ([]opennetzteil.Netzteil, error) {
 			if handle.Scheme != "tcp" {
 				return nil, fmt.Errorf("invalid handle for: %s", nc.Model)
 			}
-			nt = rs.NewHMC804(handle.Host)
+			nt = rs.NewHMC804(handle.Host, nc.Name)
 		default:
 			return nil, fmt.Errorf("unsupported power supply")
 		}

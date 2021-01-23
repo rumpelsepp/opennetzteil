@@ -137,7 +137,7 @@ func main() {
 
 	var (
 		httpLogger = penlog.NewLogger("http", os.Stderr)
-		reqLogger  = penlog.NewLogger("http-req", os.Stderr)
+		reqLogger  = requestLogger{*penlog.NewLogger("http-req", os.Stderr)}
 	)
 
 	if opts.verbose {
@@ -158,7 +158,7 @@ func main() {
 	}
 
 	apiSRV := opennetzteil.HTTPServer{
-		ReqLog:  reqLogger,
+		ReqLog:  &reqLogger,
 		Logger:  httpLogger,
 		Devices: netzteile,
 	}

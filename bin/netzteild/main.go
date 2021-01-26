@@ -12,7 +12,6 @@ import (
 
 	"git.sr.ht/~rumpelsepp/opennetzteil"
 	"git.sr.ht/~rumpelsepp/opennetzteil/devices/dummy"
-	"git.sr.ht/~rumpelsepp/opennetzteil/devices/ea"
 	"git.sr.ht/~rumpelsepp/opennetzteil/devices/rnd"
 	"git.sr.ht/~rumpelsepp/opennetzteil/devices/rs"
 	"git.sr.ht/~sircmpwn/getopt"
@@ -101,11 +100,6 @@ func initNetzteile(conf *config) ([]opennetzteil.Netzteil, error) {
 				return nil, fmt.Errorf("invalid handle for: %s", nc.Model)
 			}
 			nt = rs.NewHMC804(handle.Host, nc.Name)
-		case "ea8000":
-			if handle.Scheme != "tcp" {
-				return nil, fmt.Errorf("invalid handle for: %s", nc.Model)
-			}
-			nt = ea.NewEA8000(handle.Host, nc.Name)
 		default:
 			return nil, fmt.Errorf("unsupported power supply")
 		}

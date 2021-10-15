@@ -15,12 +15,12 @@ import (
 	"git.sr.ht/~rumpelsepp/opennetzteil/devices/rnd"
 	"git.sr.ht/~rumpelsepp/opennetzteil/devices/rs"
 	"git.sr.ht/~sircmpwn/getopt"
-	"github.com/Fraunhofer-AISEC/penlog"
+	"github.com/Fraunhofer-AISEC/penlogger"
 	"github.com/pelletier/go-toml"
 )
 
 type requestLogger struct {
-	penlog.Logger
+	penlogger.Logger
 }
 
 func (l *requestLogger) Write(p []byte) (int, error) {
@@ -130,13 +130,13 @@ func main() {
 	}
 
 	var (
-		httpLogger = penlog.NewLogger("http", os.Stderr)
-		reqLogger  = requestLogger{*penlog.NewLogger("http-req", os.Stderr)}
+		httpLogger = penlogger.NewLogger("http", os.Stderr)
+		reqLogger  = requestLogger{*penlogger.NewLogger("http-req", os.Stderr)}
 	)
 
 	if opts.verbose {
-		reqLogger.SetLogLevel(penlog.PrioDebug)
-		reqLogger.SetLogLevel(penlog.PrioDebug)
+		reqLogger.SetLogLevel(penlogger.PrioDebug)
+		reqLogger.SetLogLevel(penlogger.PrioDebug)
 	}
 
 	config, err := loadConfig(opts.config)
@@ -156,7 +156,7 @@ func main() {
 		Logger:  httpLogger,
 		Devices: netzteile,
 	}
-	apiSRV.Logger.SetLogLevel(penlog.PrioDebug)
+	apiSRV.Logger.SetLogLevel(penlogger.PrioDebug)
 	srv := &http.Server{
 		Addr:         config.HTTP.Bind,
 		WriteTimeout: time.Second * 15,

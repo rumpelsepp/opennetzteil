@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Fraunhofer-AISEC/penlog"
+	"github.com/Fraunhofer-AISEC/penlogger"
 	"github.com/spf13/pflag"
 )
 
@@ -23,7 +23,7 @@ const (
 	operationCONT = "cont"
 )
 
-var logger = penlog.NewLogger("cli", os.Stderr)
+var logger = penlogger.NewLogger("cli", os.Stderr)
 
 func recvJSON(r *http.Response, data interface{}) error {
 	body, err := ioutil.ReadAll(r.Body)
@@ -254,7 +254,7 @@ func main() {
 	pflag.Parse()
 
 	if !*verbose {
-		logger.SetLogLevel(penlog.PrioInfo)
+		logger.SetLogLevel(penlogger.PrioInfo)
 	}
 
 	rawURL := pflag.Arg(0)

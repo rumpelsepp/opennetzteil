@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"git.sr.ht/~rumpelsepp/helpers"
-	"github.com/Fraunhofer-AISEC/penlog"
+	"github.com/Fraunhofer-AISEC/penlogger"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -18,7 +18,7 @@ import (
 type HTTPServer struct {
 	ReqLog  io.Writer
 	Devices []Netzteil
-	Logger  *penlog.Logger
+	Logger  *penlogger.Logger
 }
 
 type measurement struct {

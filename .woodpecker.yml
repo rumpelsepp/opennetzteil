@@ -1,0 +1,5 @@
+pipeline:
+  setup:
+    image: archlinux:latest
+    commands:
+      - pacman -Syu go git python-pytest python-aiohttp asciidoctor rsync

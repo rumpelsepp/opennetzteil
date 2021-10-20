@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"git.sr.ht/~rumpelsepp/helpers"
+	"codeberg.org/rumpelsepp/helpers"
 	"github.com/Fraunhofer-AISEC/penlogger"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"

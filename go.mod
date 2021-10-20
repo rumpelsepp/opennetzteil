@@ -3,7 +3,7 @@ module git.sr.ht/~rumpelsepp/opennetzteil
 go 1.17
 
 require (
-	git.sr.ht/~rumpelsepp/helpers v0.0.0-20210107155038-e696fad094b7
+	codeberg.org/rumpelsepp/helpers v0.0.0-20211020091314-b9b064cf8c8a
 	git.sr.ht/~sircmpwn/getopt v1.0.0
 	github.com/Fraunhofer-AISEC/penlogger v0.0.0-20210914113712-8a2b1758b080
 	github.com/felixge/httpsnoop v1.0.2 // indirect
@@ -16,7 +16,7 @@ require (
 	github.com/pelletier/go-toml v1.9.4
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
-	golang.org/x/sys v0.0.0-20211013075003-97ac67df715c // indirect
+	golang.org/x/sys v0.0.0-20211020064051-0ec99a608a1b // indirect
 )
 
 require (

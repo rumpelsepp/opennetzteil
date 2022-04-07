@@ -1,4 +1,4 @@
-module git.sr.ht/~rumpelsepp/opennetzteil
+module codeberg.org/rumpelsepp/opennetzteil
 
 go 1.17
 
@@ -11,12 +11,12 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
-	github.com/gorilla/websocket v1.4.2
+	github.com/gorilla/websocket v1.5.0
 	github.com/jacobsa/go-serial v0.0.0-20180131005756-15cf729a72d4
 	github.com/pelletier/go-toml v1.9.4
 	github.com/spf13/pflag v1.0.5
-	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
-	golang.org/x/sys v0.0.0-20211020064051-0ec99a608a1b // indirect
+	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29 // indirect
+	golang.org/x/sys v0.0.0-20220406163625-3f8b81556e12 // indirect
 )
 
 require (

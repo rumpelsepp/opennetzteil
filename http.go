@@ -402,7 +402,12 @@ func (s *HTTPServer) putOut(w http.ResponseWriter, r *http.Request) {
 		helpers.SendJSONError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err = dev.SetOut(channel, req)
+
+	if channel == 0 {
+		err = dev.SetOut(channel, req)
+	} else {
+		err = dev.SetMaster(req)
+	}
 	if err != nil {
 		helpers.SendJSONError(w, err.Error(), http.StatusInternalServerError)
 		return

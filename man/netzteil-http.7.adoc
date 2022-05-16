@@ -131,7 +131,7 @@ PUT (REQUIRED) `/devices/{id}/channels/{channel}/ovp` (bool)::
 == Maintainer
 
 * Maintained by Stefan Tatschner <stefan@rumpelsepp.org>.
-* The Git repository is hosted here: https://codeberg.org/rumpelsepp/opennetzteil
+* The Git repository is hosted here: https://github.com/rumpelsepp/opennetzteil
 
 == License
 

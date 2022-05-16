@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"codeberg.org/rumpelsepp/opennetzteil"
+	"github.com/rumpelsepp/opennetzteil"
 )
 
 type RND320 struct {

@@ -1,6 +1,6 @@
 package dummy
 
-import "codeberg.org/rumpelsepp/opennetzteil"
+import "github.com/rumpelsepp/opennetzteil"
 
 type DummyDevice struct {
 	opennetzteil.NetzteilBase

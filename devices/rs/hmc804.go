@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"codeberg.org/rumpelsepp/opennetzteil"
+	"github.com/rumpelsepp/opennetzteil"
 )
 
 type HMC804 struct {

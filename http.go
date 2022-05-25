@@ -404,9 +404,9 @@ func (s *HTTPServer) putOut(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if channel == 0 {
-		err = dev.SetOut(channel, req)
-	} else {
 		err = dev.SetMaster(req)
+	} else {
+		err = dev.SetOut(channel, req)
 	}
 	if err != nil {
 		helpers.SendJSONError(w, err.Error(), http.StatusInternalServerError)
